@@ -3,7 +3,7 @@ package com.ibm.devops.connect.Endpoints;
 public class EndpointManager {
 
     // TODO: Make configurable at build time or otherwise
-    private static String profile = "YP";
+    private static String profile = "Velocity";
     //private static String profile = "YS1";
 
     private IEndpoints endpointProvider;
@@ -11,6 +11,8 @@ public class EndpointManager {
     public EndpointManager() {
         if(profile.equals("YS1")) {
             endpointProvider = new EndpointsYS1();
+        } else if(profile.equals("Velocity")) {
+            endpointProvider = new EndpointsVelocity();
         } else {
             endpointProvider = new EndpointsYP();
         }

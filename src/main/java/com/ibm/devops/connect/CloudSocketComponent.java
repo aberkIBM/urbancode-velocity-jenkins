@@ -26,6 +26,11 @@ import com.ibm.devops.connect.OnConnectListener;
 import com.ibm.devops.connect.CloudPublisher;
 
 import io.socket.client.Socket;
+import com.ibm.devops.connect.SecuredAction.BuildJobsList;
+
+import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.Connection;
+import com.rabbitmq.client.Channel;
 
 public class CloudSocketComponent {
 
@@ -63,51 +68,71 @@ public class CloudSocketComponent {
     	logPrefix= logPrefix + "connectToCloudServices ";
         String syncId = getSyncId();
         String syncToken = getSyncToken();
-        if (StringUtils.isBlank(syncId) || StringUtils.isBlank(syncToken)) {
-            log.info(logPrefix + "Not connecting to the cloud. IBM Bluemix DevOps Connect not registered yet.");
-            return;
-        }
+
+        // if (StringUtils.isBlank(syncId) || StringUtils.isBlank(syncToken)) {
+        //     log.info(logPrefix + "Not connecting to the cloud. IBM Bluemix DevOps Connect not registered yet.");
+        //     return;
+        // }
 
         CloudPublisher cloudPublisher = new CloudPublisher();
 
         boolean shouldConnect = true;
+
+        // ----------> Removed <-----------
         // Does integration exist
-        if(!cloudPublisher.doesIntegrationExist()) {
-            // Does another integration exist
-            if(cloudPublisher.doesOtherIntegrationExist()) {
-                log.warn(logPrefix + "These credentials have been used by another Jenkins Instance.  Please generate another Sync Id and provide those credentials here.");
-                shouldConnect = false;
-                CloudSocketComponent.setOtherIntegrationsExists(true);
-            } else {
-                // Create Integration
-                cloudPublisher.createIntegration();
-            }
-        } else {
-                CloudSocketComponent.setOtherIntegrationsExists(false);
-        }
+        // if(!cloudPublisher.doesIntegrationExist()) {
+        //     // Does another integration exist
+        //     if(cloudPublisher.doesOtherIntegrationExist()) {
+        //         log.warn(logPrefix + "These credentials have been used by another Jenkins Instance.  Please generate another Sync Id and provide those credentials here.");
+        //         shouldConnect = false;
+        //         CloudSocketComponent.setOtherIntegrationsExists(true);
+        //     } else {
+        //         // Create Integration
+        //         cloudPublisher.createIntegration();
+        //     }
+        // } else {
+        //         CloudSocketComponent.setOtherIntegrationsExists(false);
+        // }
 
         if(shouldConnect) {
-            URI uri = new URI(cloudUrl);
-            log.info(logPrefix + "Starting cloud endpoint " + syncId);
-            socket = ConnectSocket.builder()
-                .uri(uri)
-                .id(syncId)
-                .token(syncToken)
-                .onConnect(Listeners.chain(Listeners.chain(Listeners.INFO_LOGGING, Listeners.EMIT_GET_WORK), OnConnectListener.BUILD_JOBS_LIST))
-                .onDisconnect(Listeners.INFO_LOGGING)
-                .onWorkAvailable(Listeners.chain(Listeners.DEBUG_LOGGING, Listeners.EMIT_GET_WORK))
-                .onWork(workListener)
-    //            .onWork(Listeners.chain(Listeners.INFO_LOGGING, workListener))
-                .onError(Listeners.ERROR_LOGGING)
-                .build();
-            socket.on(Socket.EVENT_CONNECT_ERROR, Listeners.ERROR_LOGGING);
-            socket.on(Socket.EVENT_CONNECT_TIMEOUT, Listeners.ERROR_LOGGING);
-            socket.on(Socket.EVENT_RECONNECT_ERROR, Listeners.ERROR_LOGGING);
-            socket.on(Socket.EVENT_RECONNECT_FAILED, Listeners.ERROR_LOGGING);
-            socket.on(Socket.EVENT_RECONNECT_ATTEMPT, Listeners.INFO_LOGGING);
-            // do not listen for Socket.EVENT_RECONNECT, we will make 2 get work requests
+            // URI uri = new URI(cloudUrl);
+            // log.info(logPrefix + "Starting cloud endpoint " + syncId);
+            // socket = ConnectSocket.builder()
+            //     .uri(uri)
+            //     .id(syncId)
+            //     .token(syncToken)
+            //     .onConnect(Listeners.chain(Listeners.chain(Listeners.INFO_LOGGING, Listeners.EMIT_GET_WORK), OnConnectListener.BUILD_JOBS_LIST))
+            //     .onDisconnect(Listeners.INFO_LOGGING)
+            //     .onWorkAvailable(Listeners.chain(Listeners.DEBUG_LOGGING, Listeners.EMIT_GET_WORK))
+            //     .onWork(workListener)
+            //     .onError(Listeners.ERROR_LOGGING)
+            //     .build();
+            // socket.on(Socket.EVENT_CONNECT_ERROR, Listeners.ERROR_LOGGING);
+            // socket.on(Socket.EVENT_CONNECT_TIMEOUT, Listeners.ERROR_LOGGING);
+            // socket.on(Socket.EVENT_RECONNECT_ERROR, Listeners.ERROR_LOGGING);
+            // socket.on(Socket.EVENT_RECONNECT_FAILED, Listeners.ERROR_LOGGING);
+            // socket.on(Socket.EVENT_RECONNECT_ATTEMPT, Listeners.INFO_LOGGING);
+            // // do not listen for Socket.EVENT_RECONNECT, we will make 2 get work requests
 
-            socket.connect();
+            // socket.connect();
+
+            ConnectionFactory factory = new ConnectionFactory();
+            // "guest"/"guest" by default, limited to localhost connections
+            factory.setUsername("user");
+            factory.setPassword("ZtaRWIycAU");
+            // factory.setVirtualHost(virtualHost);
+            factory.setHost("velocity.us-south.containers.mybluemix.net");
+            factory.setPort(32022);
+
+            Connection conn = factory.newConnection();
+
+            Channel channel = conn.createChannel();
+
+
+            log.info(logPrefix + "\n\n\tAbout to attempt building list...\n\n");
+
+            BuildJobsList buildJobList = new BuildJobsList();
+            buildJobList.runAsJenkinsUser(null);
         }
     }
 

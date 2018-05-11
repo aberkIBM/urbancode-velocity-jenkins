@@ -59,6 +59,8 @@ public class CloudItemListener extends ItemListener {
 
     private void handleEvent(Item item, String phase) {
         CloudSocketComponent socket = new ConnectComputerListener().getCloudSocketInstance();
+        // TODO: Update with OnPrem check
+        // if(socket.connected()) {
         if(socket.connected()) {
             if( !(item instanceof Folder) ) {
                 JenkinsJob jenkinsJob= new JenkinsJob(item);
@@ -72,7 +74,7 @@ public class CloudItemListener extends ItemListener {
     }
 
     public List<JSONObject> buildJobsList() {
-    	log.info(logPrefix + "Building the list of Jenkins jobs...");
+    	log.info(logPrefix + "\n\n\tBuilding the list of Jenkins jobs...\n\n");
     	List<Item> allProjects= JenkinsServer.getAllItems();
     	List<JSONObject> allJobs = new ArrayList<JSONObject>();
 

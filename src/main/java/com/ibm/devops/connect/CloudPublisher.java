@@ -34,6 +34,10 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.apache.http.conn.ssl.SSLContextBuilder;
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
 import org.kohsuke.stapler.*;
 import javax.xml.bind.DatatypeConverter;
 
@@ -44,6 +48,9 @@ import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.TimeZone;
 import java.net.URLEncoder;
+import java.security.NoSuchAlgorithmException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
 
 import org.apache.commons.codec.binary.Base64;
 
@@ -111,6 +118,10 @@ public class CloudPublisher  {
         JSONArray payload = new JSONArray();
         payload.add(jobJson);
 
+        System.out.println("SENDING JOBS TO: ");
+        System.out.println(url);
+        System.out.println(jobJson.toString());
+
         return postToSyncAPI(url, payload.toString());
     }
 
@@ -127,6 +138,24 @@ public class CloudPublisher  {
 
         try {
             CloseableHttpClient httpClient = HttpClients.createDefault();
+
+            boolean acceptAllCerts = true;
+
+            if (acceptAllCerts) {
+                try {
+                    SSLContextBuilder builder = new SSLContextBuilder();
+                    builder.loadTrustMaterial(null, new TrustSelfSignedStrategy());
+                    SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
+                            builder.build(), new AllowAllHostnameVerifier());
+                    httpClient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
+                } catch (NoSuchAlgorithmException nsae) {
+                    nsae.printStackTrace();
+                } catch (KeyManagementException kme) {
+                    kme.printStackTrace();
+                } catch (KeyStoreException kse) {
+                    kse.printStackTrace();
+                }
+            }
 
             JenkinsIntegrationId jenkinsIntegrationId = new JenkinsIntegrationId();
             String jenkinsId = jenkinsIntegrationId.getIntegrationId();
