@@ -9,13 +9,7 @@ public class EndpointManager {
     private IEndpoints endpointProvider;
 
     public EndpointManager() {
-        if(profile.equals("YS1")) {
-            endpointProvider = new EndpointsYS1();
-        } else if(profile.equals("Velocity")) {
-            endpointProvider = new EndpointsVelocity();
-        } else {
-            endpointProvider = new EndpointsYP();
-        }
+        endpointProvider = new EndpointsVelocity();
     }
 
     public String getSyncApiEndpoint() {
@@ -28,5 +22,9 @@ public class EndpointManager {
 
     public String getConnectEndpoint() {
         return endpointProvider.getConnectEndpoint();
+    }
+
+    public String getVelocityHostname() {
+        return endpointProvider.getVelocityHostname();
     }
 }

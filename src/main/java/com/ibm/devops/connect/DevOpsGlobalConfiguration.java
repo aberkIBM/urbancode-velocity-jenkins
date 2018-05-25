@@ -41,6 +41,8 @@ import jenkins.model.Jenkins;
 
 import java.io.IOException;
 import javax.servlet.ServletException;
+
+import com.ibm.devops.connect.CloudPublisher;
 /**
  * Created by lix on 7/20/17.
  */
@@ -50,6 +52,7 @@ public class DevOpsGlobalConfiguration extends GlobalConfiguration {
     @CopyOnWrite
     private volatile String syncId;
     private volatile String syncToken;
+    private volatile String baseUrl;
     private String credentialsId;
 
     public DevOpsGlobalConfiguration() {
@@ -74,6 +77,15 @@ public class DevOpsGlobalConfiguration extends GlobalConfiguration {
         save();
     }
 
+    public String getBaseUrl() {
+    	return baseUrl;
+    }
+
+    public void setBaseUrl(String baseUrl) {
+        this.baseUrl = baseUrl;
+        save();
+    }
+
     public String getCredentialsId() {
         return credentialsId;
     }
@@ -89,6 +101,7 @@ public class DevOpsGlobalConfiguration extends GlobalConfiguration {
         // set that to properties and call save().
         syncId = formData.getString("syncId");
         syncToken = formData.getString("syncToken");
+        baseUrl = formData.getString("baseUrl");
        credentialsId = formData.getString("credentialsId");
         save();
 
@@ -108,16 +121,14 @@ public class DevOpsGlobalConfiguration extends GlobalConfiguration {
         new FormFieldValidator(req, rsp, true) {
             @Override
             protected void check() throws IOException, ServletException {
-                CloudSocketComponent socket = new ConnectComputerListener().getCloudSocketInstance();
-                if(socket.connected()) {
-                    ok("Success - Connected to IBM Cloud Service");
+                CloudPublisher cloudPublisher = new CloudPublisher();
+
+                boolean connected = cloudPublisher.testConnection();
+
+                if(connected) {
+                    ok("Successful Connection to Velocity Services");
                 } else {
-                    String cause = socket.getCauseOfFailure();
-                    if(cause != null) {
-                        error("Not connected to IBM Cloud Services - " + cause);
-                    } else {
-                        error("Not connected to IBM Cloud Services - Please ensure that the current values are applied");
-                    }
+                    error("Could connect to Velocity.  Please check your URL and credentials provided.");
                 }
             }
         }.process();

@@ -67,6 +67,7 @@ public class CloudPublisher  {
 
     private final String JENKINS_JOB_ENDPOINT_URL = "api/v1/jenkins/jobs";
     private final String JENKINS_JOB_STATUS_ENDPOINT_URL = "api/v1/jenkins/jobStatus";
+    private final String JENKINS_TEST_CONNECTION_URL = "api/v1/jenkins/testConnection";
     private final String INTEGRATIONS_ENDPOINT_URL = "api/v1/integrations";
     private final String INTEGRATION_ENDPOINT_URL = "api/v1/integrations/{integration_id}";
 
@@ -200,6 +201,64 @@ public class CloudPublisher  {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        return false;
+    }
+
+    public boolean testConnection() {
+        String url = this.getSyncApiUrl() + JENKINS_TEST_CONNECTION_URL;
+        String resStr = "";
+        try {
+            CloseableHttpClient httpClient = HttpClients.createDefault();
+
+            boolean acceptAllCerts = true;
+
+            if (acceptAllCerts) {
+                try {
+                    SSLContextBuilder builder = new SSLContextBuilder();
+                    builder.loadTrustMaterial(null, new TrustSelfSignedStrategy());
+                    SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
+                            builder.build(), new AllowAllHostnameVerifier());
+                    httpClient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
+                } catch (NoSuchAlgorithmException nsae) {
+                    nsae.printStackTrace();
+                } catch (KeyManagementException kme) {
+                    kme.printStackTrace();
+                } catch (KeyStoreException kse) {
+                    kse.printStackTrace();
+                }
+            }
+
+            JenkinsIntegrationId jenkinsIntegrationId = new JenkinsIntegrationId();
+            String jenkinsId = jenkinsIntegrationId.getIntegrationId();
+
+            HttpGet getMethod = new HttpGet(url);
+            // postMethod = addProxyInformation(postMethod);
+            getMethod.setHeader("sync_token", Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getSyncToken());
+            getMethod.setHeader("sync_id", Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getSyncId());
+            getMethod.setHeader("instance_type", "JENKINS");
+            getMethod.setHeader("instance_id", jenkinsId);
+            getMethod.setHeader("integration_id", jenkinsId);
+
+            CloseableHttpResponse response = httpClient.execute(getMethod);
+
+            resStr = EntityUtils.toString(response.getEntity());
+            if (response.getStatusLine().toString().contains("200")) {
+                // get 200 response
+                log.info("Connected to Velocity service successfully");
+                return true;
+            } else {
+                log.info("Could not authenticate to Velocity Services");
+            }
+        } catch (IllegalStateException e) {
+            log.error("Could not connect to Velocity services");
+        } catch (UnsupportedEncodingException e) {
+            log.error("Could not connect to Velocity services");
+        } catch (ClientProtocolException e) {
+            log.error("Could not connect to Velocity services");
+        } catch (IOException e) {
+            log.error("Could not connect to Velocity services");
+        }
+
         return false;
     }
 

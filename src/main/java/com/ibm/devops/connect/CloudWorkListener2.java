@@ -69,11 +69,11 @@ import com.ibm.devops.connect.Status.JenkinsJobStatus;
  * WorkListener but some proxy class that implements the IWorkListener interface. So anywhere you want WorkListener
  * injected, you must use IWorkListener.
  */
-public class CloudWorkListener implements IWorkListener {
-	public static final Logger log = LoggerFactory.getLogger(CloudWorkListener.class);
-    private String logPrefix= "[IBM Cloud DevOps] CloudWorkListener#";
+public class CloudWorkListener2 {
+	public static final Logger log = LoggerFactory.getLogger(CloudWorkListener2.class);
+    private String logPrefix= "[IBM Cloud DevOps] CloudWorkListener2#";
 
-    public CloudWorkListener() {
+    public CloudWorkListener2() {
 
     }
 
@@ -84,18 +84,18 @@ public class CloudWorkListener implements IWorkListener {
     /* (non-Javadoc)
      * @see com.ibm.cloud.urbancode.sync.IWorkListener#call(com.ibm.cloud.urbancode.connect.client.ConnectSocket, java.lang.String, java.lang.Object)
      */
-    @Override
-    public void call(ConnectSocket socket, String event, Object... args) {
+    public void call(String event, Object... args) {
         TriggerJob triggerJob = new TriggerJob();
 
-        TriggerJobParamObj paramObj = triggerJob.new TriggerJobParamObj(socket, event, args);
+        TriggerJobParamObj paramObj = triggerJob.new TriggerJobParamObj(null, event, args);
         triggerJob.runAsJenkinsUser(paramObj);
     }
 
     public void callSecured(ConnectSocket socket, String event, Object... args) {
         log.info(logPrefix + " Received event from Connect Socket");
 
-        JSONArray incomingJobs = JSONArray.fromObject(args[0].toString());
+        //TODO Don't make this an array in the silly way that I have.  I just want this to work
+        JSONArray incomingJobs = JSONArray.fromObject("[" + args[0].toString() + "]");
 
         for(int i=0; i < incomingJobs.size(); i++) {
             JSONObject incomingJob = incomingJobs.getJSONObject(i);
@@ -176,22 +176,9 @@ public class CloudWorkListener implements IWorkListener {
 
             }
 
-            sendResult(socket, incomingJobs.getJSONObject(i).get("id").toString(), WorkStatus.started, "This work has been started");
+            //sendResult(socket, incomingJobs.getJSONObject(i).get("id").toString(), WorkStatus.started, "This work has been started");
         }
 
-    }
-
-    private void sendResult(ConnectSocket socket, String id, WorkStatus status, String comment) {
-        JSONObject json = new JSONObject();
-        try {
-            json.put("id", id);
-            json.put("status", status.name());
-            json.put("description", comment);
-        }
-        catch (JSONException e) {
-            throw new RuntimeException("Error constructing work result JSON", e);
-        }
-        socket.emit("set_work_status", json.toString());
     }
 
     private List<ParameterValue> generateParamList (JSONObject incomingJob, Map<String, String> typeMap) {

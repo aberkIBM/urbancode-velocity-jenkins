@@ -8,4 +8,6 @@ public interface IEndpoints {
 
     public String getConnectEndpoint();
 
+    public String getVelocityHostname();
+
 }
