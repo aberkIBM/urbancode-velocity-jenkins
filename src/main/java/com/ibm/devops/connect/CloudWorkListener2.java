@@ -58,8 +58,8 @@ import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import net.sf.json.JSONObject;
 
 import com.ibm.devops.connect.CloudCause.JobStatus;
-import com.ibm.devops.connect.SecuredAction.TriggerJob.TriggerJobParamObj;
-import com.ibm.devops.connect.SecuredAction.TriggerJob;
+import com.ibm.devops.connect.SecuredActions.TriggerJob.TriggerJobParamObj;
+import com.ibm.devops.connect.SecuredActions.TriggerJob;
 
 import com.ibm.devops.connect.Status.JenkinsJobStatus;
 

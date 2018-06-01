@@ -32,8 +32,11 @@ import net.sf.json.JSONObject;
 
 import java.io.IOException;
 import java.lang.InterruptedException;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 abstract class AbstractJenkinsStatus {
     public static final Logger log = LoggerFactory.getLogger(AbstractJenkinsStatus.class);
@@ -58,24 +61,38 @@ abstract class AbstractJenkinsStatus {
 
     protected void getOrCreateCrAction() {
         // Get CrAction
-        List<Action> actions = run.getActions();
-        for(Action action : actions) {
-            if (action instanceof CrAction) {
-                crAction = (CrAction)action;
+        if ( run != null) {
+            List<Action> actions = run.getActions();
+            for(Action action : actions) {
+                if (action instanceof CrAction) {
+                    crAction = (CrAction)action;
+                }
             }
-        }
 
-        // If not, create crAction
-        if (crAction == null) {
-            crAction = new CrAction();
-            run.addAction(crAction);
+            // If not, create crAction
+            if (crAction == null) {
+                crAction = new CrAction();
+                run.addAction(crAction);
+            }
         }
     }
 
     protected void getEnvVars() {
         try {
-            if(run != null && taskListener != null) {
+            if( run != null && taskListener != null) {
                 this.envVars = run.getEnvironment(taskListener);
+                Set<String> keys = this.envVars.keySet();
+                List<String> keysToRemove = new ArrayList<String>();
+                Iterator<String> iterator = keys.iterator();
+                while (iterator.hasNext()) {
+                    String key = iterator.next();
+                    if (key.contains(".")) {
+                        keysToRemove.add(key);
+                    }
+                }
+                for (String key : keysToRemove) {
+                    this.envVars.remove(key);
+                }
             }
         } catch (IOException ioEx) {
             log.warn("IOException thrown while trying to retrieve EnvVars in constructor: " + ioEx);

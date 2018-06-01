@@ -26,7 +26,7 @@ import com.ibm.devops.connect.OnConnectListener;
 import com.ibm.devops.connect.CloudPublisher;
 
 import io.socket.client.Socket;
-import com.ibm.devops.connect.SecuredAction.BuildJobsList;
+import com.ibm.devops.connect.SecuredActions.BuildJobsList;
 
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Connection;
