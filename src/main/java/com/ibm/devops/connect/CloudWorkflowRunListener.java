@@ -18,9 +18,8 @@ import hudson.Extension;
 import hudson.model.listeners.RunListener;
 import hudson.model.TaskListener;
 import hudson.model.Cause;
-import hudson.model.Run;
-import hudson.tasks.BuildStep;
 
+import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,38 +31,39 @@ import java.util.List;
 import java.util.HashSet;
 
 import com.ibm.devops.connect.CloudCause.JobStatus;
-import com.ibm.devops.connect.Status.JenkinsJobStatus;
+import com.ibm.devops.connect.Status.JenkinsPipelineStatus;
 
 @Extension
-public class CloudRunListener extends RunListener<Run> {
-    public static final Logger log = LoggerFactory.getLogger(CloudRunListener.class);
+public class CloudWorkflowRunListener extends RunListener<WorkflowRun> {
+    public static final Logger log = LoggerFactory.getLogger(CloudWorkflowRunListener.class);
 
     @Override
-    public void onStarted(Run run, TaskListener listener) {
-        CloudCause cloudCause = getCloudCause(run);
+    public void onStarted(WorkflowRun workflowRun, TaskListener listener) {
+        // http://javadoc.jenkins.io/plugin/workflow-job/org/jenkinsci/plugins/workflow/job/WorkflowRun.html
+        CloudCause cloudCause = getCloudCause(workflowRun);
         if (cloudCause == null) {
             cloudCause = new CloudCause();
         }
-        JenkinsJobStatus status = new JenkinsJobStatus(run, cloudCause, null, listener, true, false);
+        JenkinsPipelineStatus status = new JenkinsPipelineStatus(workflowRun, cloudCause, null, listener, true, false);
         JSONObject statusUpdate = status.generate();
         CloudPublisher cloudPublisher = new CloudPublisher();
         cloudPublisher.uploadJobStatus(statusUpdate);
     }
 
     @Override
-    public void onCompleted(Run run, TaskListener listener) {
-        CloudCause cloudCause = getCloudCause(run);
+    public void onCompleted(WorkflowRun workflowRun, TaskListener listener) {
+        CloudCause cloudCause = getCloudCause(workflowRun);
         if (cloudCause == null) {
             cloudCause = new CloudCause();
         }
-        JenkinsJobStatus status = new JenkinsJobStatus(run, cloudCause, null, listener, false, false);
+        JenkinsPipelineStatus status = new JenkinsPipelineStatus(workflowRun, cloudCause, null, listener, false, false);
         JSONObject statusUpdate = status.generate();
         CloudPublisher cloudPublisher = new CloudPublisher();
         cloudPublisher.uploadJobStatus(statusUpdate);
     }
 
-    private CloudCause getCloudCause(Run run) {
-        List<Cause> causes = run.getCauses();
+    private CloudCause getCloudCause(WorkflowRun workflowRun) {
+        List<Cause> causes = workflowRun.getCauses();
 
         for(Cause cause : causes) {
             if (cause instanceof CloudCause ) {

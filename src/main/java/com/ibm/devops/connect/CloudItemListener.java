@@ -34,12 +34,12 @@ import com.cloudbees.hudson.plugins.folder.Folder;
 
 @Extension
 public class CloudItemListener extends ItemListener {
-	public static final Logger log = LoggerFactory.getLogger(CloudItemListener.class);
-	private String logPrefix= "[IBM Cloud DevOps] CloudItemListener#";
+    public static final Logger log = LoggerFactory.getLogger(CloudItemListener.class);
+    private String logPrefix= "[IBM Cloud DevOps] CloudItemListener#";
 
     public CloudItemListener(){
-    	logPrefix= logPrefix + "CloudItemListener ";
-    	log.info(logPrefix + "CloudItemListener started...");
+        logPrefix= logPrefix + "CloudItemListener ";
+        log.info(logPrefix + "CloudItemListener started...");
     }
 
     @Override
@@ -69,23 +69,23 @@ public class CloudItemListener extends ItemListener {
             }
         // }
 
-    	// we'll handle the updates to the sync app here
+        // we'll handle the updates to the sync app here
     }
 
     public List<JSONObject> buildJobsList() {
-    	log.info(logPrefix + "\n\n\tBuilding the list of Jenkins jobs...\n\n");
-    	List<Item> allProjects= JenkinsServer.getAllItems();
-    	List<JSONObject> allJobs = new ArrayList<JSONObject>();
+        log.info(logPrefix + "\n\n\tBuilding the list of Jenkins jobs...\n\n");
+        List<Item> allProjects= JenkinsServer.getAllItems();
+        List<JSONObject> allJobs = new ArrayList<JSONObject>();
 
         CloudPublisher cloudPublisher = new CloudPublisher();
-    	for (Item anItem : allProjects) {
+        for (Item anItem : allProjects) {
             if( !(anItem instanceof Folder) ) {
                 JenkinsJob jenkinsJob= new JenkinsJob(anItem);
                 allJobs.add(jenkinsJob.toJson());
 
                 cloudPublisher.uploadJobInfo(jenkinsJob.toJson());
             }
-		}
-    	return allJobs;
+        }
+        return allJobs;
     }
 }

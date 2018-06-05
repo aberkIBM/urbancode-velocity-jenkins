@@ -101,11 +101,10 @@ public class CloudWorkListener2 {
             JSONObject incomingJob = incomingJobs.getJSONObject(i);
             // sample job creation request from a toolchain
             if (incomingJob.has("jobType") && "new".equalsIgnoreCase(incomingJob.get("jobType").toString())) {
-            	log.info(logPrefix + "Job creation request received.");
-            	// delegating job creation to the Jenkins server
-            	JenkinsServer.createJob(incomingJob);
-        	}
-
+                log.info(logPrefix + "Job creation request received.");
+                // delegating job creation to the Jenkins server
+                JenkinsServer.createJob(incomingJob);
+            }
 
             if (incomingJob.has("fullName")) {
                 String fullName = incomingJob.get("fullName").toString();
@@ -226,25 +225,25 @@ public class CloudWorkListener2 {
         if(item instanceof WorkflowJob) {
             List<JobProperty<? super WorkflowJob>> properties = ((WorkflowJob)item).getAllProperties();
 
-			for(JobProperty property : properties) {
-				if (property instanceof ParametersDefinitionProperty) {
-					List<ParameterDefinition> paraDefs = ((ParametersDefinitionProperty)property).getParameterDefinitions();
-					for (ParameterDefinition paramDef : paraDefs) {
+            for(JobProperty property : properties) {
+                if (property instanceof ParametersDefinitionProperty) {
+                    List<ParameterDefinition> paraDefs = ((ParametersDefinitionProperty)property).getParameterDefinitions();
+                    for (ParameterDefinition paramDef : paraDefs) {
                         result.put(paramDef.getName(), paramDef.getType());
-					}
-				}
-			}
+                    }
+                }
+            }
         } else if(item instanceof AbstractItem) {
             List<Action> actions = ((AbstractItem)item).getActions();
 
-			for(Action action : actions) {
-				if (action instanceof ParametersDefinitionProperty) {
-					List<ParameterDefinition> paraDefs = ((ParametersDefinitionProperty)action).getParameterDefinitions();
-					for (ParameterDefinition paramDef : paraDefs) {
+            for(Action action : actions) {
+                if (action instanceof ParametersDefinitionProperty) {
+                    List<ParameterDefinition> paraDefs = ((ParametersDefinitionProperty)action).getParameterDefinitions();
+                    for (ParameterDefinition paramDef : paraDefs) {
                         result.put(paramDef.getName(), paramDef.getType());
-					}
-				}
-			}
+                    }
+                }
+            }
         }
 
         return result;

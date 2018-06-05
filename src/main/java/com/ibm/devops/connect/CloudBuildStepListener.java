@@ -44,7 +44,7 @@ import com.ibm.devops.connect.Status.JenkinsJobStatus;
 
 @Extension
 public class CloudBuildStepListener extends BuildStepListener {
-	public static final Logger log = LoggerFactory.getLogger(CloudBuildStepListener.class);
+    public static final Logger log = LoggerFactory.getLogger(CloudBuildStepListener.class);
 
     public void finished(AbstractBuild build, BuildStep bs, BuildListener listener, boolean canContinue) {
 
