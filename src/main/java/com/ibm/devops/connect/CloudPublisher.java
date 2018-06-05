@@ -34,6 +34,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
+import org.apache.tools.ant.types.resources.BaseResourceCollectionContainer;
 import org.apache.http.conn.ssl.SSLContextBuilder;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
@@ -103,6 +104,11 @@ public class CloudPublisher  {
     private String getSyncApiUrl() {
         EndpointManager em = new EndpointManager();
         return em.getSyncApiEndpoint();
+    }
+
+    private String getSyncApiUrl(String baseUrl) {
+        EndpointManager em = new EndpointManager();
+        return em.getSyncApiEndpoint(baseUrl);
     }
 
     private String getSyncStoreUrl() {
@@ -204,9 +210,8 @@ public class CloudPublisher  {
         return false;
     }
 
-    public boolean testConnection() {
-        String url = this.getSyncApiUrl() + JENKINS_TEST_CONNECTION_URL;
-        String resStr = "";
+    public boolean testConnection(String syncId, String syncToken, String baseUrl) {
+        String url = this.getSyncApiUrl(baseUrl) + JENKINS_TEST_CONNECTION_URL;
         try {
             CloseableHttpClient httpClient = HttpClients.createDefault();
 
@@ -233,15 +238,14 @@ public class CloudPublisher  {
 
             HttpGet getMethod = new HttpGet(url);
             // postMethod = addProxyInformation(postMethod);
-            getMethod.setHeader("sync_token", Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getSyncToken());
-            getMethod.setHeader("sync_id", Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getSyncId());
+            getMethod.setHeader("sync_token", syncToken);
+            getMethod.setHeader("sync_id", syncId);
             getMethod.setHeader("instance_type", "JENKINS");
             getMethod.setHeader("instance_id", jenkinsId);
             getMethod.setHeader("integration_id", jenkinsId);
 
             CloseableHttpResponse response = httpClient.execute(getMethod);
 
-            resStr = EntityUtils.toString(response.getEntity());
             if (response.getStatusLine().toString().contains("200")) {
                 // get 200 response
                 log.info("Connected to Velocity service successfully");

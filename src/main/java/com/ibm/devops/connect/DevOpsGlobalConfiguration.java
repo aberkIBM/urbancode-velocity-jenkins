@@ -20,13 +20,13 @@ import hudson.CopyOnWrite;
 import hudson.Extension;
 import hudson.model.Computer;
 import hudson.util.ListBoxModel;
+import hudson.util.FormValidation;
 import jenkins.model.GlobalConfiguration;
 import net.sf.json.JSONObject;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerResponse;
 import org.kohsuke.stapler.AncestorInPath;
-import hudson.util.FormFieldValidator;
 import com.ibm.devops.connect.CloudSocketComponent;
 import com.ibm.devops.connect.ConnectComputerListener;
 
@@ -116,22 +116,22 @@ public class DevOpsGlobalConfiguration extends GlobalConfiguration {
         return items;
     }
 
-    @Deprecated
-    public void doTestConnection(StaplerRequest req, StaplerResponse rsp) throws IOException, ServletException {
-        new FormFieldValidator(req, rsp, true) {
-            @Override
-            protected void check() throws IOException, ServletException {
-                CloudPublisher cloudPublisher = new CloudPublisher();
+    public FormValidation doTestConnection(@QueryParameter("syncId") final String syncId,
+        @QueryParameter("syncToken") final String syncToken,
+        @QueryParameter("baseUrl") final String baseUrl)
+    throws FormException {
+        try {
+            CloudPublisher cloudPublisher = new CloudPublisher();
 
-                boolean connected = cloudPublisher.testConnection();
-
-                if(connected) {
-                    ok("Successful Connection to Velocity Services");
-                } else {
-                    error("Could connect to Velocity.  Please check your URL and credentials provided.");
-                }
+            boolean connected = cloudPublisher.testConnection(syncId, syncToken, baseUrl);
+            if (connected) {
+                return FormValidation.ok("Successful Connection to Velocity Services");
+            } else {
+                return FormValidation.error("Could not connect to Velocity.  Please check your URL and credentials provided.");
             }
-        }.process();
+        } catch (Exception e) {
+            return FormValidation.error("Could not connect to Velocity : " + e.getMessage());
+        }
     }
 
     /**

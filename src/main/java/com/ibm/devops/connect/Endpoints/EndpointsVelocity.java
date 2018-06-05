@@ -7,6 +7,7 @@ import java.net.URL;
 import java.net.MalformedURLException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.servlet.mvc.UrlFilenameViewController;
 
 public class EndpointsVelocity implements IEndpoints {
     private String logPrefix = "[EndpointsVelocity]";
@@ -19,9 +20,15 @@ public class EndpointsVelocity implements IEndpoints {
     // private static final String SYNC_API_ENPOINT = "http://192.168.1.35:6002/";
     private static final String SYNC_STORE_ENPOINT = "https://bogus/";
     private static final String CONNECT_ENPOINT = "https://bogus";
+    private static final String REPORTING_SYNC_PATH = "/reporting-sync-api/";
 
     public String getSyncApiEndpoint() {
-        return getBaseUrl() + "/reporting-sync-api/";
+        return getBaseUrl() + REPORTING_SYNC_PATH;
+    }
+
+    public String getSyncApiEndpoint(String baseUrl) {
+        baseUrl = removeTrailingSlash(baseUrl);
+        return baseUrl + REPORTING_SYNC_PATH;
     }
 
     public String getSyncStoreEndpoint() {
@@ -44,6 +51,13 @@ public class EndpointsVelocity implements IEndpoints {
     }
 
     private String getBaseUrl() {
-        return Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getBaseUrl();
+        return removeTrailingSlash(Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getBaseUrl());
+    }
+
+    private String removeTrailingSlash(String url) {
+        if (url.endsWith("/")) {
+            url = url.substring(0, url.length() - 1);
+        }
+        return url;
     }
 }

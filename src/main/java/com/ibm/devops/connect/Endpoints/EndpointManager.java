@@ -16,6 +16,10 @@ public class EndpointManager {
         return endpointProvider.getSyncApiEndpoint();
     }
 
+    public String getSyncApiEndpoint(String baseUrl) {
+        return endpointProvider.getSyncApiEndpoint(baseUrl);
+    }
+
     public String getSyncStoreEndpoint() {
         return endpointProvider.getSyncStoreEndpoint();
     }
