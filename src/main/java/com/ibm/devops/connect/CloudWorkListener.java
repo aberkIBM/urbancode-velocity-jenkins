@@ -150,10 +150,6 @@ public class CloudWorkListener implements IWorkListener {
                     }
                 } else if (item instanceof WorkflowJob) {
                     WorkflowJob workflowJob = (WorkflowJob)item;
-
-                    System.out.println("\n\n\t\t\t&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&");
-                    System.out.println(parametersList);
-
                     QueueTaskFuture queuedTask = workflowJob.scheduleBuild2(0, new ParametersAction(parametersList), new CauseAction(cloudCause));
 
                     if (queuedTask == null) {

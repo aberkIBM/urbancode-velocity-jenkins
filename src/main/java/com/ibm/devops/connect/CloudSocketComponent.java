@@ -94,6 +94,7 @@ public class CloudSocketComponent {
             Connection conn = factory.newConnection();
 
             Channel channel = conn.createChannel();
+            Channel channelHeartbeat = conn.createChannel();
 
             log.info("Connecting to RabbitMQ");
 
@@ -101,27 +102,46 @@ public class CloudSocketComponent {
             channel.exchangeDeclare(EXCHANGE_NAME, "topic", true);
             String queueName = channel.queueDeclare().getQueue();
             channel.queueBind(queueName, EXCHANGE_NAME, "jenkins." + jenkinsId + ".task.started");
+            channel.queueBind(queueName, EXCHANGE_NAME, "jenkins." + syncId + ".heartbeat");
 
             Consumer consumer = new DefaultConsumer(channel) {
                 @Override
                 public void handleDelivery(String consumerTag, Envelope envelope,
                                             AMQP.BasicProperties properties, byte[] body) throws IOException {
-                    String message = new String(body, "UTF-8");
-                    System.out.println(" [x] Received '" + message + "'");
 
-                    CloudWorkListener2 cloudWorkListener = new CloudWorkListener2();
-                    cloudWorkListener.call("startJob", message);
+                    if (envelope.getRoutingKey​().contains(".heartbeat")) {
+                        CloudPublisher cloudPublisher = new CloudPublisher();
+                        String syncId = getSyncId();
+                        String syncToken = getSyncToken();
+
+                        EndpointManager em = new EndpointManager();
+                        
+                        String url = removeTrailingSlash(Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getBaseUrl());
+                        boolean connected = cloudPublisher.testConnection(syncId, syncToken, url);
+                    } else {
+                        String message = new String(body, "UTF-8");
+                        System.out.println(" [x] Received '" + message + "'");
+
+                        CloudWorkListener2 cloudWorkListener = new CloudWorkListener2();
+                        cloudWorkListener.call("startJob", message);
+                    }
                 }
             };
+
             channel.basicConsume(queueName, true, consumer);
-
-
 
             log.info(logPrefix + "\n\n\tAbout to attempt building list...\n\n");
 
             BuildJobsList buildJobList = new BuildJobsList();
             buildJobList.runAsJenkinsUser(null);
         }
+    }
+
+    private String removeTrailingSlash(String url) {
+        if (url.endsWith("/")) {
+            url = url.substring(0, url.length() - 1);
+        }
+        return url;
     }
 
     // this does get called, but you may not see logging in the console. it will appear in the file.
