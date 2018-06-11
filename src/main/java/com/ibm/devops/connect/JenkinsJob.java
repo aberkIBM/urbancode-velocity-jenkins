@@ -81,9 +81,6 @@ public class JenkinsJob {
 
 		jobToJson.put("id", jobId);
 		jobToJson.put("instanceType", "JENKINS");
-		//jobToJson.put("instanceName", Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getInstanceName());
-		// jobToJson.put("instanceName", "On Prem Jenkins");
-		// jobToJson.put("instance_id", "On Prem Jenkins");
 
 		if(this.item instanceof WorkflowJob) {
 			jobToJson.put("isPipeline", true);

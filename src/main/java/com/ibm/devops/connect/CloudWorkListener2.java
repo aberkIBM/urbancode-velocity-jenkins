@@ -63,6 +63,10 @@ import com.ibm.devops.connect.SecuredActions.TriggerJob;
 
 import com.ibm.devops.connect.Status.JenkinsJobStatus;
 
+import java.security.MessageDigest;
+import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.Cipher;
+
 /*
  * When Spring is applying the @Transactional annotation, it creates a proxy class which wraps your class.
  * So when your bean is created in your application context, you are getting an object that is not of type
@@ -90,12 +94,42 @@ public class CloudWorkListener2 {
         TriggerJobParamObj paramObj = triggerJob.new TriggerJobParamObj(null, event, args);
         triggerJob.runAsJenkinsUser(paramObj);
     }
+    private static byte[] toByte(String hexString) {
+        int len = hexString.length()/2;
+        byte[] result = new byte[len];
+        for (int i = 0; i < len; i++) {
+            result[i] = Integer.valueOf(hexString.substring(2*i, 2*i+2), 16).byteValue();
+        }
+        return result;
+    }
+
+    private static String decrypt(String seed, String encrypted) throws Exception {
+        byte[] keyb = seed.getBytes("UTF-8");
+        MessageDigest md = MessageDigest.getInstance("MD5");
+        byte[] thedigest = md.digest(keyb);
+        SecretKeySpec skey = new SecretKeySpec(thedigest, "AES");
+        Cipher dcipher = Cipher.getInstance("AES");
+        dcipher.init(Cipher.DECRYPT_MODE, skey);
+
+        byte[] clearbyte = dcipher.doFinal(toByte(encrypted));
+        return new String(clearbyte);
+    }
 
     public void callSecured(ConnectSocket socket, String event, Object... args) {
         log.info(logPrefix + " Received event from Connect Socket");
 
+        String payload = args[0].toString();
+        String token = Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getSyncToken();
+
+        try {
+            payload = decrypt(token, payload);
+        } catch (Exception e) {
+            //TODO handle decryption error
+            System.out.println("Unable to decrypt");
+        }
+
         //TODO Don't make this an array in the silly way that I have.  I just want this to work
-        JSONArray incomingJobs = JSONArray.fromObject("[" + args[0].toString() + "]");
+        JSONArray incomingJobs = JSONArray.fromObject("[" + payload + "]");
 
         for(int i=0; i < incomingJobs.size(); i++) {
             JSONObject incomingJob = incomingJobs.getJSONObject(i);

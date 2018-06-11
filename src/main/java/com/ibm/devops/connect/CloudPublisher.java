@@ -163,16 +163,14 @@ public class CloudPublisher  {
                 }
             }
 
-            JenkinsIntegrationId jenkinsIntegrationId = new JenkinsIntegrationId();
-            String jenkinsId = jenkinsIntegrationId.getIntegrationId();
-
             HttpPost postMethod = new HttpPost(url);
             // postMethod = addProxyInformation(postMethod);
+            String syncId = Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getSyncId();
             postMethod.setHeader("sync_token", Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getSyncToken());
-            postMethod.setHeader("sync_id", Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getSyncId());
+            postMethod.setHeader("sync_id", syncId);
             postMethod.setHeader("instance_type", "JENKINS");
-            postMethod.setHeader("instance_id", jenkinsId);
-            postMethod.setHeader("integration_id", jenkinsId);
+            postMethod.setHeader("instance_id", syncId);
+            postMethod.setHeader("integration_id", syncId);
             postMethod.setHeader("Content-Type", "application/json");
 
             StringEntity data = new StringEntity(payload);
@@ -232,16 +230,13 @@ public class CloudPublisher  {
                 }
             }
 
-            JenkinsIntegrationId jenkinsIntegrationId = new JenkinsIntegrationId();
-            String jenkinsId = jenkinsIntegrationId.getIntegrationId();
-
             HttpGet getMethod = new HttpGet(url);
             // postMethod = addProxyInformation(postMethod);
             getMethod.setHeader("sync_token", syncToken);
             getMethod.setHeader("sync_id", syncId);
             getMethod.setHeader("instance_type", "JENKINS");
-            getMethod.setHeader("instance_id", jenkinsId);
-            getMethod.setHeader("integration_id", jenkinsId);
+            getMethod.setHeader("instance_id", syncId);
+            getMethod.setHeader("integration_id", syncId);
 
             CloseableHttpResponse response = httpClient.execute(getMethod);
             if (response.getStatusLine().toString().contains("200")) {

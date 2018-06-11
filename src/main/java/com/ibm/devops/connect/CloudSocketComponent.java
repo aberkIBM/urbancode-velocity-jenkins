@@ -82,27 +82,21 @@ public class CloudSocketComponent {
             ConnectionFactory factory = new ConnectionFactory();
             EndpointManager em = new EndpointManager();
 
-            factory.setUsername("rabbit");
-            factory.setPassword("carrot");
+            // Public Jenkins Client Credentials
+            factory.setUsername("jenkins");
+            factory.setPassword("jenkins");
             String hostname = em.getVelocityHostname();
             factory.setHost(hostname);
             factory.setPort(5672);
 
-            JenkinsIntegrationId jenkinsIntegrationId = new JenkinsIntegrationId();
-            String jenkinsId = jenkinsIntegrationId.getIntegrationId();
-
             Connection conn = factory.newConnection();
 
             Channel channel = conn.createChannel();
-            Channel channelHeartbeat = conn.createChannel();
 
             log.info("Connecting to RabbitMQ");
 
             String EXCHANGE_NAME = "jenkins";
-            channel.exchangeDeclare(EXCHANGE_NAME, "topic", true);
-            String queueName = channel.queueDeclare().getQueue();
-            channel.queueBind(queueName, EXCHANGE_NAME, "jenkins." + jenkinsId + ".task.started");
-            channel.queueBind(queueName, EXCHANGE_NAME, "jenkins." + syncId + ".heartbeat");
+            String queueName = "jenkins.client." + syncId;
 
             Consumer consumer = new DefaultConsumer(channel) {
                 @Override
