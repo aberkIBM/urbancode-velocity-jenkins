@@ -103,7 +103,7 @@ public class CloudSocketComponent {
                 public void handleDelivery(String consumerTag, Envelope envelope,
                                             AMQP.BasicProperties properties, byte[] body) throws IOException {
 
-                    if (envelope.getRoutingKey​().contains(".heartbeat")) {
+                    if (envelope.getRoutingKey().contains(".heartbeat")) {
                         CloudPublisher cloudPublisher = new CloudPublisher();
                         String syncId = getSyncId();
                         String syncToken = getSyncToken();

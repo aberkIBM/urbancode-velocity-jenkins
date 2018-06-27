@@ -229,7 +229,7 @@ abstract class AbstractJenkinsStatus {
         }
     }
 
-    public JSONObject generate() {
+    public JSONObject generate(boolean completed) {
         JSONObject result = new JSONObject();
 
         evaluateSourceData();
@@ -242,20 +242,14 @@ abstract class AbstractJenkinsStatus {
             evaluateBuildStep();
         }
 
+        String status = null;
         if (run.getResult() == null) {
-            if(run.isBuilding()) {
-                result.put("status", JobStatus.started.toString());
-            } else {
-                result.put("status", JobStatus.unstarted.toString());
-            }
+            status = run.isBuilding() ? JobStatus.started.toString() : JobStatus.unstarted.toString();
         } else {
-            if(run.getResult() == Result.SUCCESS) {
-                result.put("status", JobStatus.success.toString());
-            } else {
-                result.put("status", JobStatus.failure.toString());
-            }
+            status = completed && run.getResult() == Result.SUCCESS ? JobStatus.success.toString() : JobStatus.failure.toString();
         }
 
+        result.put("status", status);
         result.put("timestamp", System.currentTimeMillis());
         result.put("syncId", Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getSyncId());
         result.put("name", run.getDisplayName());

@@ -53,7 +53,7 @@ public class CloudBuildStepListener extends BuildStepListener {
             cloudCause = new CloudCause();
         }
         JenkinsJobStatus status = new JenkinsJobStatus(build, cloudCause, bs, listener, false, !canContinue);
-        JSONObject statusUpdate = status.generate();
+        JSONObject statusUpdate = status.generate(false);
         CloudPublisher cloudPublisher = new CloudPublisher();
         cloudPublisher.uploadJobStatus(statusUpdate);
     }
@@ -62,7 +62,7 @@ public class CloudBuildStepListener extends BuildStepListener {
         // We listen to jobs that are started by IBM Cloud only
         if(this.shouldListen(build)) {
             JenkinsJobStatus status = new JenkinsJobStatus(build, getCloudCause(build), bs, listener, true, false);
-            JSONObject statusUpdate = status.generate();
+            JSONObject statusUpdate = status.generate(false);
             CloudPublisher cloudPublisher = new CloudPublisher();
             cloudPublisher.uploadJobStatus(statusUpdate);
         }

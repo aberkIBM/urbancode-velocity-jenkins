@@ -45,7 +45,7 @@ public class CloudRunListener extends RunListener<Run> {
             cloudCause = new CloudCause();
         }
         JenkinsJobStatus status = new JenkinsJobStatus(run, cloudCause, null, listener, true, false);
-        JSONObject statusUpdate = status.generate();
+        JSONObject statusUpdate = status.generate(false);
         CloudPublisher cloudPublisher = new CloudPublisher();
         cloudPublisher.uploadJobStatus(statusUpdate);
     }
@@ -57,7 +57,7 @@ public class CloudRunListener extends RunListener<Run> {
             cloudCause = new CloudCause();
         }
         JenkinsJobStatus status = new JenkinsJobStatus(run, cloudCause, null, listener, false, false);
-        JSONObject statusUpdate = status.generate();
+        JSONObject statusUpdate = status.generate(true);
         CloudPublisher cloudPublisher = new CloudPublisher();
         cloudPublisher.uploadJobStatus(statusUpdate);
     }
