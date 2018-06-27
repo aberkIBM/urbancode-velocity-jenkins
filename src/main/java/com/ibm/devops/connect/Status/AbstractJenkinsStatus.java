@@ -245,8 +245,10 @@ abstract class AbstractJenkinsStatus {
         String status = null;
         if (run.getResult() == null) {
             status = run.isBuilding() ? JobStatus.started.toString() : JobStatus.unstarted.toString();
-        } else {
-            status = completed && run.getResult() == Result.SUCCESS ? JobStatus.success.toString() : JobStatus.failure.toString();
+        } else if (run.getResult() != Result.SUCCESS) {
+            status = JobStatus.failure.toString();
+        } else { // status is success
+            status = completed ? JobStatus.success.toString() : JobStatus.started.toString();
         }
 
         result.put("status", status);
