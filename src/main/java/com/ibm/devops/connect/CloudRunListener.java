@@ -21,6 +21,7 @@ import hudson.model.Cause;
 import hudson.model.Run;
 import hudson.tasks.BuildStep;
 
+import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +33,9 @@ import java.util.List;
 import java.util.HashSet;
 
 import com.ibm.devops.connect.CloudCause.JobStatus;
+import com.ibm.devops.connect.Status.AbstractJenkinsStatus;
 import com.ibm.devops.connect.Status.JenkinsJobStatus;
+import com.ibm.devops.connect.Status.JenkinsPipelineStatus;
 
 @Extension
 public class CloudRunListener extends RunListener<Run> {
@@ -44,7 +47,13 @@ public class CloudRunListener extends RunListener<Run> {
         if (cloudCause == null) {
             cloudCause = new CloudCause();
         }
-        JenkinsJobStatus status = new JenkinsJobStatus(run, cloudCause, null, listener, true, false);
+
+        AbstractJenkinsStatus status = null;
+        if (run instanceof WorkflowRun) {
+            status = new JenkinsPipelineStatus((WorkflowRun)run, cloudCause, null, listener, true, false);
+        } else {
+            status = new JenkinsJobStatus(run, cloudCause, null, listener, true, false);
+        }
         JSONObject statusUpdate = status.generate(false);
         CloudPublisher cloudPublisher = new CloudPublisher();
         cloudPublisher.uploadJobStatus(statusUpdate);
@@ -56,7 +65,13 @@ public class CloudRunListener extends RunListener<Run> {
         if (cloudCause == null) {
             cloudCause = new CloudCause();
         }
-        JenkinsJobStatus status = new JenkinsJobStatus(run, cloudCause, null, listener, false, false);
+
+        AbstractJenkinsStatus status = null;
+        if (run instanceof WorkflowRun) {
+            status = new JenkinsPipelineStatus((WorkflowRun)run, cloudCause, null, listener, false, false);
+        } else {
+            status = new JenkinsJobStatus(run, cloudCause, null, listener, false, false);
+        }
         JSONObject statusUpdate = status.generate(true);
         CloudPublisher cloudPublisher = new CloudPublisher();
         cloudPublisher.uploadJobStatus(statusUpdate);

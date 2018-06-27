@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-abstract class AbstractJenkinsStatus {
+public abstract class AbstractJenkinsStatus {
     public static final Logger log = LoggerFactory.getLogger(AbstractJenkinsStatus.class);
     // Run
     protected Run run;
