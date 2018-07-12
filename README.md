@@ -1,3 +1,5 @@
+Note: Must be built with Java 8.
+
 # IBM Continuous Release
 
 ---

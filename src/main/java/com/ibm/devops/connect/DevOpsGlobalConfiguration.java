@@ -20,13 +20,13 @@ import hudson.CopyOnWrite;
 import hudson.Extension;
 import hudson.model.Computer;
 import hudson.util.ListBoxModel;
+import hudson.util.FormValidation;
 import jenkins.model.GlobalConfiguration;
 import net.sf.json.JSONObject;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerResponse;
 import org.kohsuke.stapler.AncestorInPath;
-import hudson.util.FormFieldValidator;
 import com.ibm.devops.connect.CloudSocketComponent;
 import com.ibm.devops.connect.ConnectComputerListener;
 
@@ -41,6 +41,8 @@ import jenkins.model.Jenkins;
 
 import java.io.IOException;
 import javax.servlet.ServletException;
+
+import com.ibm.devops.connect.CloudPublisher;
 /**
  * Created by lix on 7/20/17.
  */
@@ -50,7 +52,9 @@ public class DevOpsGlobalConfiguration extends GlobalConfiguration {
     @CopyOnWrite
     private volatile String syncId;
     private volatile String syncToken;
+    private volatile String baseUrl;
     private String credentialsId;
+    private String rabbitMQPort;
 
     public DevOpsGlobalConfiguration() {
         load();
@@ -74,6 +78,15 @@ public class DevOpsGlobalConfiguration extends GlobalConfiguration {
         save();
     }
 
+    public String getBaseUrl() {
+    	return baseUrl;
+    }
+
+    public void setBaseUrl(String baseUrl) {
+        this.baseUrl = baseUrl;
+        save();
+    }
+
     public String getCredentialsId() {
         return credentialsId;
     }
@@ -83,12 +96,22 @@ public class DevOpsGlobalConfiguration extends GlobalConfiguration {
         save();
     }
 
+    public String getRabbitMQPort() {
+        return rabbitMQPort;
+    }
+
+    public void setRabbitMQPort(String rabbitMQPort) {
+        this.rabbitMQPort = rabbitMQPort;
+        save();
+    }
+
     @Override
     public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
         // To persist global configuration information,
         // set that to properties and call save().
         syncId = formData.getString("syncId");
         syncToken = formData.getString("syncToken");
+        baseUrl = formData.getString("baseUrl");
        credentialsId = formData.getString("credentialsId");
         save();
 
@@ -103,24 +126,22 @@ public class DevOpsGlobalConfiguration extends GlobalConfiguration {
         return items;
     }
 
-    @Deprecated
-    public void doTestConnection(StaplerRequest req, StaplerResponse rsp) throws IOException, ServletException {
-        new FormFieldValidator(req, rsp, true) {
-            @Override
-            protected void check() throws IOException, ServletException {
-                CloudSocketComponent socket = new ConnectComputerListener().getCloudSocketInstance();
-                if(socket.connected()) {
-                    ok("Success - Connected to IBM Cloud Service");
-                } else {
-                    String cause = socket.getCauseOfFailure();
-                    if(cause != null) {
-                        error("Not connected to IBM Cloud Services - " + cause);
-                    } else {
-                        error("Not connected to IBM Cloud Services - Please ensure that the current values are applied");
-                    }
-                }
+    public FormValidation doTestConnection(@QueryParameter("syncId") final String syncId,
+        @QueryParameter("syncToken") final String syncToken,
+        @QueryParameter("baseUrl") final String baseUrl)
+    throws FormException {
+        try {
+            CloudPublisher cloudPublisher = new CloudPublisher();
+
+            boolean connected = cloudPublisher.testConnection(syncId, syncToken, baseUrl);
+            if (connected) {
+                return FormValidation.ok("Successful Connection to Velocity Services");
+            } else {
+                return FormValidation.error("Could not connect to Velocity.  Please check your URL and credentials provided.");
             }
-        }.process();
+        } catch (Exception e) {
+            return FormValidation.error("Could not connect to Velocity : " + e.getMessage());
+        }
     }
 
     /**
