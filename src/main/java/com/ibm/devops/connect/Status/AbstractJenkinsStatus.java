@@ -60,7 +60,7 @@ public abstract class AbstractJenkinsStatus {
     protected Boolean isPaused;
 
     protected void getOrCreateCrAction() {
-        // Get CrAction
+
         if ( run != null) {
             List<Action> actions = run.getActions();
             for(Action action : actions) {
