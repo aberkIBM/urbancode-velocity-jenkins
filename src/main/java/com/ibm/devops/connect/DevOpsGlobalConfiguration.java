@@ -54,6 +54,7 @@ public class DevOpsGlobalConfiguration extends GlobalConfiguration {
     private volatile String syncToken;
     private volatile String baseUrl;
     private String credentialsId;
+    private String rabbitMQPort;
 
     public DevOpsGlobalConfiguration() {
         load();
@@ -92,6 +93,15 @@ public class DevOpsGlobalConfiguration extends GlobalConfiguration {
 
     public void setCredentialsId(String credentialsId) {
         this.credentialsId = credentialsId;
+        save();
+    }
+
+    public String getRabbitMQPort() {
+        return rabbitMQPort;
+    }
+
+    public void setRabbitMQPort(String rabbitMQPort) {
+        this.rabbitMQPort = rabbitMQPort;
         save();
     }
 

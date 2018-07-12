@@ -87,7 +87,19 @@ public class CloudSocketComponent {
             factory.setPassword("jenkins");
             String hostname = em.getVelocityHostname();
             factory.setHost(hostname);
-            factory.setPort(5672);
+
+            int port = 5672;
+            String rabbitPort = Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getRabbitMQPort();
+
+            if (rabbitPort != null && rabbitPort != "") {
+                try {
+                    port = Integer.parseInt(rabbitPort);
+                } catch (NumberFormatException nfe) {
+                    log.warn("Provided Rabbit MQ port is not an integer.  Using default 5672");
+                }
+            }
+
+            factory.setPort(port);
 
             Connection conn = factory.newConnection();
 
