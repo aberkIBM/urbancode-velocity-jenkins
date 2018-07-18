@@ -72,9 +72,6 @@ public class CloudSocketComponent {
     public void connectToCloudServices() throws Exception {
     	logPrefix= logPrefix + "connectToCloudServices ";
         String syncId = getSyncId();
-        String syncToken = getSyncToken();
-
-        CloudPublisher cloudPublisher = new CloudPublisher();
 
         boolean shouldConnect = true;
 
@@ -91,7 +88,7 @@ public class CloudSocketComponent {
             int port = 5672;
             String rabbitPort = Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getRabbitMQPort();
 
-            if (rabbitPort != null && rabbitPort != "") {
+            if (rabbitPort != null && !rabbitPort.equals("")) {
                 try {
                     port = Integer.parseInt(rabbitPort);
                 } catch (NumberFormatException nfe) {
@@ -119,8 +116,6 @@ public class CloudSocketComponent {
                         CloudPublisher cloudPublisher = new CloudPublisher();
                         String syncId = getSyncId();
                         String syncToken = getSyncToken();
-
-                        EndpointManager em = new EndpointManager();
                         
                         String url = removeTrailingSlash(Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getBaseUrl());
                         boolean connected = cloudPublisher.testConnection(syncId, syncToken, url);

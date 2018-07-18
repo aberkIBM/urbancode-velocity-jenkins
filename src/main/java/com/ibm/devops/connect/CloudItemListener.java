@@ -58,18 +58,12 @@ public class CloudItemListener extends ItemListener {
     }
 
     private void handleEvent(Item item, String phase) {
-        CloudSocketComponent socket = new ConnectComputerListener().getCloudSocketInstance();
-        // TODO: Update with OnPrem check
-        // if(socket.connected()) {
-            if( !(item instanceof Folder) ) {
-                JenkinsJob jenkinsJob= new JenkinsJob(item);
-                log.info(ToStringBuilder.reflectionToString(jenkinsJob.toJson()) + " was " + phase);
-                CloudPublisher cloudPublisher = new CloudPublisher();
-                cloudPublisher.uploadJobInfo(jenkinsJob.toJson());
-            }
-        // }
-
-        // we'll handle the updates to the sync app here
+        if( !(item instanceof Folder) ) {
+            JenkinsJob jenkinsJob= new JenkinsJob(item);
+            log.info(ToStringBuilder.reflectionToString(jenkinsJob.toJson()) + " was " + phase);
+            CloudPublisher cloudPublisher = new CloudPublisher();
+            cloudPublisher.uploadJobInfo(jenkinsJob.toJson());
+        }
     }
 
     public List<JSONObject> buildJobsList() {
