@@ -58,7 +58,6 @@ public class CloudItemListener extends ItemListener {
     }
 
     private void handleEvent(Item item, String phase) {
-        CloudSocketComponent socket = new ConnectComputerListener().getCloudSocketInstance();
         // TODO: Update with OnPrem check
         // if(socket.connected()) {
             if( !(item instanceof Folder) ) {

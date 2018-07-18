@@ -51,6 +51,7 @@ public class ConnectComputerListener extends ComputerListener {
             } catch (Exception e) {
                 log.error(logPrefix + "Exception caught while connecting to Cloud Services: " + e);
             }
+        }
 
         try {
         	log.info(logPrefix + "Connecting to Cloud Services...");
