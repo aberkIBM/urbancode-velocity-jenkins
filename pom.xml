@@ -94,7 +94,7 @@
   <scm>
     <connection>scm:git:git://git@github.com/jenkinsci/ibm-continuous-release-plugin.git</connection>
     <developerConnection>scm:git:git@github.com:jenkinsci/ibm-continuous-release-plugin.git</developerConnection>
-    <tag>1.1.0</tag>
+    <tag>urbancode-velocity-2.0.0</tag>
   </scm>
 
   <repositories>

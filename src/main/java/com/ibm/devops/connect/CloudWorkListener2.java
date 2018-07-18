@@ -112,7 +112,7 @@ public class CloudWorkListener2 {
         dcipher.init(Cipher.DECRYPT_MODE, skey);
 
         byte[] clearbyte = dcipher.doFinal(toByte(encrypted));
-        return new String(clearbyte);
+        return new String(clearbyte, "UTF-8");
     }
 
     public void callSecured(ConnectSocket socket, String event, Object... args) {
