@@ -55,6 +55,7 @@ public class DevOpsGlobalConfiguration extends GlobalConfiguration {
     private volatile String baseUrl;
     private String credentialsId;
     private String rabbitMQPort;
+    private String rabbitMQHost;
 
     public DevOpsGlobalConfiguration() {
         load();
@@ -100,8 +101,17 @@ public class DevOpsGlobalConfiguration extends GlobalConfiguration {
         return rabbitMQPort;
     }
 
+    public String getRabbitMQHost() {
+        return rabbitMQHost;
+    }
+
     public void setRabbitMQPort(String rabbitMQPort) {
         this.rabbitMQPort = rabbitMQPort;
+        save();
+    }
+
+    public void setRabbitMQHost(String rabbitMQHost) {
+        this.rabbitMQHost = rabbitMQHost;
         save();
     }
 
@@ -112,7 +122,9 @@ public class DevOpsGlobalConfiguration extends GlobalConfiguration {
         syncId = formData.getString("syncId");
         syncToken = formData.getString("syncToken");
         baseUrl = formData.getString("baseUrl");
-       credentialsId = formData.getString("credentialsId");
+        credentialsId = formData.getString("credentialsId");
+        rabbitMQPort = formData.getString("rabbitMQPort");
+        rabbitMQHost = formData.getString("rabbitMQHost");
         save();
 
         reconnectCloudSocket();
