@@ -8,7 +8,9 @@
  *******************************************************************************/
 package com.ibm.devops.connect;
 
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URL;
 import java.util.Properties;
 
 import jenkins.model.Jenkins;
@@ -82,8 +84,22 @@ public class CloudSocketComponent {
             // Public Jenkins Client Credentials
             factory.setUsername("jenkins");
             factory.setPassword("jenkins");
-            String hostname = em.getVelocityHostname();
-            factory.setHost(hostname);
+
+            String velocityHost = em.getVelocityHostname();
+            String rabbitHost = Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getRabbitMQHost();
+            if (rabbitHost != null && !rabbitHost.equals("")) {
+                try {
+                    if (rabbitHost.endsWith("/")) {
+                        rabbitHost = rabbitHost.substring(0, rabbitHost.length() - 1);
+                    }
+                    URL urlObj = new URL(rabbitHost);
+                    rabbitHost = urlObj.getHost();
+                } catch (MalformedURLException e) {
+                    log.warn("Provided Rabbit MQ Host is not a valid hostname. Using default : " + velocityHost, e);
+                    rabbitHost = velocityHost;
+                }
+            }
+            factory.setHost(rabbitHost);
 
             int port = 5672;
             String rabbitPort = Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getRabbitMQPort();
@@ -116,7 +132,7 @@ public class CloudSocketComponent {
                         CloudPublisher cloudPublisher = new CloudPublisher();
                         String syncId = getSyncId();
                         String syncToken = getSyncToken();
-                        
+
                         String url = removeTrailingSlash(Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getBaseUrl());
                         boolean connected = cloudPublisher.testConnection(syncId, syncToken, url);
                     } else {
