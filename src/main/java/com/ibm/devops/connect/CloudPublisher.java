@@ -30,6 +30,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.message.AbstractHttpMessage;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -60,6 +61,7 @@ import org.jenkinsci.plugins.uniqueid.IdStore;
 
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
+import org.apache.http.HttpEntity;
 
 public class CloudPublisher  {
 	public static final Logger log = LoggerFactory.getLogger(CloudPublisher.class);
@@ -115,6 +117,11 @@ public class CloudPublisher  {
         return em.getSyncStoreEndpoint();
     }
 
+    private String getQualityDataUrl() {
+        EndpointManager em = new EndpointManager();
+        return em.getQualityDataEndpoint();
+    }
+
     /**
      * Upload the build information to Sync API - API V1.
      */
@@ -135,6 +142,85 @@ public class CloudPublisher  {
 
         String url = this.getSyncApiUrl() + JENKINS_JOB_STATUS_ENDPOINT_URL;
         return postToSyncAPI(url, jobStatus.toString());
+    }
+
+    public boolean uploadQualityData(HttpEntity entity) {
+        String localLogPrefix= logPrefix + "uploadQualityData ";
+
+        String resStr = "";
+
+        String url = this.getQualityDataUrl();
+        try {
+            CloseableHttpClient httpClient = HttpClients.createDefault();
+
+            boolean acceptAllCerts = true;
+
+            if (acceptAllCerts) {
+                try {
+                    SSLContextBuilder builder = new SSLContextBuilder();
+                    builder.loadTrustMaterial(null, new TrustSelfSignedStrategy());
+                    SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
+                            builder.build(), new AllowAllHostnameVerifier());
+                    httpClient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
+                } catch (NoSuchAlgorithmException nsae) {
+                    nsae.printStackTrace();
+                } catch (KeyManagementException kme) {
+                    kme.printStackTrace();
+                } catch (KeyStoreException kse) {
+                    kse.printStackTrace();
+                }
+            }
+
+            HttpPost postMethod = new HttpPost(url);
+            
+            attachHeaders(postMethod);
+            postMethod.setEntity(entity);
+
+            CloseableHttpResponse response = httpClient.execute(postMethod);
+
+            resStr = EntityUtils.toString(response.getEntity());
+            if (response.getStatusLine().toString().contains("201")) {
+                // get 200 response
+                log.info(localLogPrefix + "Upload Quality Data successfully");
+                return true;
+
+            } else {
+                // if gets error status
+                log.error(localLogPrefix + "Error: Failed to upload Quality Data, response status " + response.getStatusLine());
+            }
+        } catch (JsonSyntaxException e) {
+            log.error(localLogPrefix + "Invalid Json response, response: " + resStr);
+        } catch (IllegalStateException e) {
+            // will be triggered when 403 Forbidden
+            try {
+                log.error(localLogPrefix + "Please check if you have the access to " + URLEncoder.encode(this.orgName, "UTF-8") + " org");
+            } catch (UnsupportedEncodingException e1) {
+                e1.printStackTrace();
+            }
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        } catch (ClientProtocolException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    private void attachHeaders(AbstractHttpMessage message) {
+        String syncId = Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getSyncId();
+        message.setHeader("sync_token", Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getSyncToken());
+        message.setHeader("sync_id", syncId);
+        message.setHeader("instance_type", "JENKINS");
+        message.setHeader("instance_id", syncId);
+        message.setHeader("integration_id", syncId);
+
+        // Must include both _ and - headers because NGINX services don't pass _ headers by default and the original version of the Velocity services expected the _ headers
+        message.setHeader("sync-token", Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getSyncToken());
+        message.setHeader("sync-id", syncId);
+        message.setHeader("instance-type", "JENKINS");
+        message.setHeader("instance-id", syncId);
+        message.setHeader("integration-id", syncId);
     }
 
     private boolean postToSyncAPI(String url, String payload) {
@@ -164,13 +250,9 @@ public class CloudPublisher  {
             }
 
             HttpPost postMethod = new HttpPost(url);
-            // postMethod = addProxyInformation(postMethod);
-            String syncId = Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getSyncId();
-            postMethod.setHeader("sync_token", Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getSyncToken());
-            postMethod.setHeader("sync_id", syncId);
-            postMethod.setHeader("instance_type", "JENKINS");
-            postMethod.setHeader("instance_id", syncId);
-            postMethod.setHeader("integration_id", syncId);
+            
+            attachHeaders(postMethod);
+
             postMethod.setHeader("Content-Type", "application/json");
 
             StringEntity data = new StringEntity(payload);
@@ -237,6 +319,13 @@ public class CloudPublisher  {
             getMethod.setHeader("instance_type", "JENKINS");
             getMethod.setHeader("instance_id", syncId);
             getMethod.setHeader("integration_id", syncId);
+
+            // Must include both _ and - headers because NGINX services don't pass _ headers by default and the original version of the Velocity services expected the _ headers
+            getMethod.setHeader("sync-token", syncToken);
+            getMethod.setHeader("sync-id", syncId);
+            getMethod.setHeader("instance-type", "JENKINS");
+            getMethod.setHeader("instance-id", syncId);
+            getMethod.setHeader("integration-id", syncId);
 
             CloseableHttpResponse response = httpClient.execute(getMethod);
             if (response.getStatusLine().toString().contains("200")) {
