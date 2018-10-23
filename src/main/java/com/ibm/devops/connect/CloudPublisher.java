@@ -24,43 +24,31 @@ import net.sf.json.JSONArray;
 
 import com.google.gson.*;
 import jenkins.model.Jenkins;
-import jenkins.tasks.SimpleBuildStep;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.message.AbstractHttpMessage;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
-import org.apache.tools.ant.types.resources.BaseResourceCollectionContainer;
 import org.apache.http.conn.ssl.SSLContextBuilder;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
-import org.kohsuke.stapler.*;
 
-import javax.annotation.Nonnull;
-import javax.servlet.ServletException;
-import java.io.*;
-import java.text.SimpleDateFormat;
-import java.util.HashMap;
-import java.util.TimeZone;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.security.NoSuchAlgorithmException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 
-import org.apache.commons.codec.binary.Base64;
-
 import com.ibm.devops.connect.Endpoints.EndpointManager;
 
-import org.jenkinsci.plugins.uniqueid.IdStore;
-
-import hudson.tasks.BuildStepDescriptor;
-import hudson.tasks.BuildStepMonitor;
 import org.apache.http.HttpEntity;
 
 public class CloudPublisher  {
@@ -144,67 +132,48 @@ public class CloudPublisher  {
         return postToSyncAPI(url, jobStatus.toString());
     }
 
-    public boolean uploadQualityData(HttpEntity entity) {
+    public boolean uploadQualityData(HttpEntity entity) throws Exception {
         String localLogPrefix= logPrefix + "uploadQualityData ";
 
         String resStr = "";
 
         String url = this.getQualityDataUrl();
-        try {
-            CloseableHttpClient httpClient = HttpClients.createDefault();
+        CloseableHttpClient httpClient = HttpClients.createDefault();
 
-            boolean acceptAllCerts = true;
+        boolean acceptAllCerts = true;
 
-            if (acceptAllCerts) {
-                try {
-                    SSLContextBuilder builder = new SSLContextBuilder();
-                    builder.loadTrustMaterial(null, new TrustSelfSignedStrategy());
-                    SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
-                            builder.build(), new AllowAllHostnameVerifier());
-                    httpClient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
-                } catch (NoSuchAlgorithmException nsae) {
-                    nsae.printStackTrace();
-                } catch (KeyManagementException kme) {
-                    kme.printStackTrace();
-                } catch (KeyStoreException kse) {
-                    kse.printStackTrace();
-                }
-            }
-
-            HttpPost postMethod = new HttpPost(url);
-            
-            attachHeaders(postMethod);
-            postMethod.setEntity(entity);
-
-            CloseableHttpResponse response = httpClient.execute(postMethod);
-
-            resStr = EntityUtils.toString(response.getEntity());
-            if (response.getStatusLine().toString().contains("201")) {
-                // get 200 response
-                log.info(localLogPrefix + "Upload Quality Data successfully");
-                return true;
-
-            } else {
-                // if gets error status
-                log.error(localLogPrefix + "Error: Failed to upload Quality Data, response status " + response.getStatusLine());
-            }
-        } catch (JsonSyntaxException e) {
-            log.error(localLogPrefix + "Invalid Json response, response: " + resStr);
-        } catch (IllegalStateException e) {
-            // will be triggered when 403 Forbidden
+        if (acceptAllCerts) {
             try {
-                log.error(localLogPrefix + "Please check if you have the access to " + URLEncoder.encode(this.orgName, "UTF-8") + " org");
-            } catch (UnsupportedEncodingException e1) {
-                e1.printStackTrace();
+                SSLContextBuilder builder = new SSLContextBuilder();
+                builder.loadTrustMaterial(null, new TrustSelfSignedStrategy());
+                SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
+                        builder.build(), new AllowAllHostnameVerifier());
+                httpClient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
+            } catch (NoSuchAlgorithmException nsae) {
+                nsae.printStackTrace();
+            } catch (KeyManagementException kme) {
+                kme.printStackTrace();
+            } catch (KeyStoreException kse) {
+                kse.printStackTrace();
             }
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        } catch (ClientProtocolException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
-        return false;
+
+        HttpPost postMethod = new HttpPost(url);
+
+        attachHeaders(postMethod);
+        postMethod.setEntity(entity);
+
+        CloseableHttpResponse response = httpClient.execute(postMethod);
+
+        resStr = EntityUtils.toString(response.getEntity());
+        if (response.getStatusLine().toString().contains("201")) {
+            // get 200 response
+            log.info(localLogPrefix + "Upload Quality Data successfully");
+            return true;
+        } else {
+            // if gets error status
+            throw new Exception("Bad response code when uploading Quality Data: " + response.getStatusLine() + " - " + resStr);
+        }
     }
 
     private void attachHeaders(AbstractHttpMessage message) {
@@ -250,7 +219,7 @@ public class CloudPublisher  {
             }
 
             HttpPost postMethod = new HttpPost(url);
-            
+
             attachHeaders(postMethod);
 
             postMethod.setHeader("Content-Type", "application/json");
