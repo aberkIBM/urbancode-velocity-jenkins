@@ -167,11 +167,9 @@ public class CloudPublisher  {
 
         resStr = EntityUtils.toString(response.getEntity());
         if (response.getStatusLine().toString().contains("201")) {
-            // get 200 response
             log.info(localLogPrefix + "Upload Quality Data successfully");
             return true;
         } else {
-            // if gets error status
             throw new Exception("Bad response code when uploading Quality Data: " + response.getStatusLine() + " - " + resStr);
         }
     }
