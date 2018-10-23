@@ -65,7 +65,6 @@ public class UploadJUnitTestResult extends Builder implements SimpleBuildStep {
             } else {
                 build.setResult(Result.UNSTABLE);
             }
-
         }
     }
 

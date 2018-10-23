@@ -206,8 +206,7 @@ public class CloudPublisher  {
                 try {
                     SSLContextBuilder builder = new SSLContextBuilder();
                     builder.loadTrustMaterial(null, new TrustSelfSignedStrategy());
-                    SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
-                            builder.build(), new AllowAllHostnameVerifier());
+                    SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(builder.build(), new AllowAllHostnameVerifier());
                     httpClient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
                 } catch (NoSuchAlgorithmException nsae) {
                     nsae.printStackTrace();
