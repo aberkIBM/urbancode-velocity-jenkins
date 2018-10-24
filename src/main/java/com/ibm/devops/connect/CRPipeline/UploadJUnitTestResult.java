@@ -164,12 +164,5 @@ public class UploadJUnitTestResult extends Builder implements SimpleBuildStep {
             }
             return success;
         }
-        /**
-         * Check the role of the executing node to follow jenkins new file access rules
-         */
-        @Override
-        public void checkRoles(RoleChecker checker) throws SecurityException {
-            this.checkRoles(checker);
-        }
     }
 }
