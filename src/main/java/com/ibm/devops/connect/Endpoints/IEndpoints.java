@@ -10,6 +10,8 @@ public interface IEndpoints {
 
     public String getConnectEndpoint();
 
+    public String getQualityDataEndpoint();
+
     public String getVelocityHostname();
 
 }
