@@ -24,42 +24,32 @@ import net.sf.json.JSONArray;
 
 import com.google.gson.*;
 import jenkins.model.Jenkins;
-import jenkins.tasks.SimpleBuildStep;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.message.AbstractHttpMessage;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
-import org.apache.tools.ant.types.resources.BaseResourceCollectionContainer;
 import org.apache.http.conn.ssl.SSLContextBuilder;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
-import org.kohsuke.stapler.*;
 
-import javax.annotation.Nonnull;
-import javax.servlet.ServletException;
-import java.io.*;
-import java.text.SimpleDateFormat;
-import java.util.HashMap;
-import java.util.TimeZone;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.security.NoSuchAlgorithmException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 
-import org.apache.commons.codec.binary.Base64;
-
 import com.ibm.devops.connect.Endpoints.EndpointManager;
 
-import org.jenkinsci.plugins.uniqueid.IdStore;
-
-import hudson.tasks.BuildStepDescriptor;
-import hudson.tasks.BuildStepMonitor;
+import org.apache.http.HttpEntity;
 
 public class CloudPublisher  {
 	public static final Logger log = LoggerFactory.getLogger(CloudPublisher.class);
@@ -115,6 +105,11 @@ public class CloudPublisher  {
         return em.getSyncStoreEndpoint();
     }
 
+    private String getQualityDataUrl() {
+        EndpointManager em = new EndpointManager();
+        return em.getQualityDataEndpoint();
+    }
+
     /**
      * Upload the build information to Sync API - API V1.
      */
@@ -137,6 +132,64 @@ public class CloudPublisher  {
         return postToSyncAPI(url, jobStatus.toString());
     }
 
+    public boolean uploadQualityData(HttpEntity entity) throws Exception {
+        String localLogPrefix= logPrefix + "uploadQualityData ";
+
+        String resStr = "";
+
+        String url = this.getQualityDataUrl();
+        CloseableHttpClient httpClient = HttpClients.createDefault();
+
+        boolean acceptAllCerts = true;
+
+        if (acceptAllCerts) {
+            try {
+                SSLContextBuilder builder = new SSLContextBuilder();
+                builder.loadTrustMaterial(null, new TrustSelfSignedStrategy());
+                SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
+                        builder.build(), new AllowAllHostnameVerifier());
+                httpClient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
+            } catch (NoSuchAlgorithmException nsae) {
+                nsae.printStackTrace();
+            } catch (KeyManagementException kme) {
+                kme.printStackTrace();
+            } catch (KeyStoreException kse) {
+                kse.printStackTrace();
+            }
+        }
+
+        HttpPost postMethod = new HttpPost(url);
+
+        attachHeaders(postMethod);
+        postMethod.setEntity(entity);
+
+        CloseableHttpResponse response = httpClient.execute(postMethod);
+
+        resStr = EntityUtils.toString(response.getEntity());
+        if (response.getStatusLine().toString().contains("201")) {
+            log.info(localLogPrefix + "Upload Quality Data successfully");
+            return true;
+        } else {
+            throw new Exception("Bad response code when uploading Quality Data: " + response.getStatusLine() + " - " + resStr);
+        }
+    }
+
+    private void attachHeaders(AbstractHttpMessage message) {
+        String syncId = Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getSyncId();
+        message.setHeader("sync_token", Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getSyncToken());
+        message.setHeader("sync_id", syncId);
+        message.setHeader("instance_type", "JENKINS");
+        message.setHeader("instance_id", syncId);
+        message.setHeader("integration_id", syncId);
+
+        // Must include both _ and - headers because NGINX services don't pass _ headers by default and the original version of the Velocity services expected the _ headers
+        message.setHeader("sync-token", Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getSyncToken());
+        message.setHeader("sync-id", syncId);
+        message.setHeader("instance-type", "JENKINS");
+        message.setHeader("instance-id", syncId);
+        message.setHeader("integration-id", syncId);
+    }
+
     private boolean postToSyncAPI(String url, String payload) {
     	String localLogPrefix= logPrefix + "uploadJobInfo ";
 
@@ -151,8 +204,7 @@ public class CloudPublisher  {
                 try {
                     SSLContextBuilder builder = new SSLContextBuilder();
                     builder.loadTrustMaterial(null, new TrustSelfSignedStrategy());
-                    SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
-                            builder.build(), new AllowAllHostnameVerifier());
+                    SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(builder.build(), new AllowAllHostnameVerifier());
                     httpClient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
                 } catch (NoSuchAlgorithmException nsae) {
                     nsae.printStackTrace();
@@ -164,13 +216,9 @@ public class CloudPublisher  {
             }
 
             HttpPost postMethod = new HttpPost(url);
-            // postMethod = addProxyInformation(postMethod);
-            String syncId = Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getSyncId();
-            postMethod.setHeader("sync_token", Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getSyncToken());
-            postMethod.setHeader("sync_id", syncId);
-            postMethod.setHeader("instance_type", "JENKINS");
-            postMethod.setHeader("instance_id", syncId);
-            postMethod.setHeader("integration_id", syncId);
+
+            attachHeaders(postMethod);
+
             postMethod.setHeader("Content-Type", "application/json");
 
             StringEntity data = new StringEntity(payload);
@@ -237,6 +285,13 @@ public class CloudPublisher  {
             getMethod.setHeader("instance_type", "JENKINS");
             getMethod.setHeader("instance_id", syncId);
             getMethod.setHeader("integration_id", syncId);
+
+            // Must include both _ and - headers because NGINX services don't pass _ headers by default and the original version of the Velocity services expected the _ headers
+            getMethod.setHeader("sync-token", syncToken);
+            getMethod.setHeader("sync-id", syncId);
+            getMethod.setHeader("instance-type", "JENKINS");
+            getMethod.setHeader("instance-id", syncId);
+            getMethod.setHeader("integration-id", syncId);
 
             CloseableHttpResponse response = httpClient.execute(getMethod);
             if (response.getStatusLine().toString().contains("200")) {

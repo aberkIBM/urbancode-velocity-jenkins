@@ -12,15 +12,13 @@ import org.springframework.web.servlet.mvc.UrlFilenameViewController;
 public class EndpointsVelocity implements IEndpoints {
     private String logPrefix = "[EndpointsVelocity]";
 	private static final Logger log = LoggerFactory.getLogger(EndpointsVelocity.class);
-    // private static final String SYNC_API_ENPOINT = "https://velocity.us-south.containers.mybluemix.net/sync/";
-    // private static final String SYNC_API_ENPOINT = "https://192.168.1.6:8090/reporting-sync-api/";
-    // private static final String SYNC_API_ENPOINT = "http://192.168.1.6:3499/";
+
     private static final String SYNC_API_ENPOINT = "http://192.168.1.6:8071/";
     private static final String AMQP_ENPOINT = "https://velocity.us-south.containers.mybluemix.net/sync/";
-    // private static final String SYNC_API_ENPOINT = "http://192.168.1.35:6002/";
     private static final String SYNC_STORE_ENPOINT = "https://bogus/";
     private static final String CONNECT_ENPOINT = "https://bogus";
     private static final String REPORTING_SYNC_PATH = "/reporting-sync-api/";
+    private static final String QUALITY_DATA_PATH = "/reporting-consumer/qualityData";
 
     public String getSyncApiEndpoint() {
         return getBaseUrl() + REPORTING_SYNC_PATH;
@@ -29,6 +27,10 @@ public class EndpointsVelocity implements IEndpoints {
     public String getSyncApiEndpoint(String baseUrl) {
         baseUrl = removeTrailingSlash(baseUrl);
         return baseUrl + REPORTING_SYNC_PATH;
+    }
+
+    public String getQualityDataEndpoint() {
+        return getBaseUrl() + QUALITY_DATA_PATH;
     }
 
     public String getSyncStoreEndpoint() {
