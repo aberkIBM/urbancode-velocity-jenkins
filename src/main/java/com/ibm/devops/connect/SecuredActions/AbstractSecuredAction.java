@@ -13,12 +13,31 @@ import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredenti
 import org.acegisecurity.Authentication;
 import org.acegisecurity.AuthenticationException;
 import org.acegisecurity.BadCredentialsException;
+import org.acegisecurity.userdetails.UsernameNotFoundException;
 
 public abstract class AbstractSecuredAction {
+    public static String NO_CREDENTIALS_PROVIDED = "No Credentials Provided";
+
     protected abstract void run(ParamObj paramObj);
 
     public class ParamObj {
+        private String jenkinsAuthenticationError;
 
+        protected void setJenkinsAuthenticationError(String message) {
+            this.jenkinsAuthenticationError = message;
+        }
+
+        public String getJenkinsAuthenticationError() {
+            return this.jenkinsAuthenticationError;
+        }
+
+        public Boolean isJenkinsAuthenticationError() {
+            if(this.jenkinsAuthenticationError != null) {
+                return true;
+            } else {
+                return false;
+            }
+        }
     }
 
     public void runAsJenkinsUser(ParamObj paramObj) {
@@ -29,8 +48,22 @@ public abstract class AbstractSecuredAction {
 
         if(providedCredentials != null) {
             originalAuth = Jenkins.getInstance().getAuthentication();
-            Authentication authenticatedAuth = authenticateCredentials(providedCredentials);
-            SecurityContextHolder.getContext().setAuthentication(authenticatedAuth);
+            try {
+                Authentication authenticatedAuth = authenticateCredentials(providedCredentials);
+                SecurityContextHolder.getContext().setAuthentication(authenticatedAuth);
+            } catch (UsernameNotFoundException e) {
+                paramObj.setJenkinsAuthenticationError("Bad Jenkins Credentials: Velocity configuration in Jenkins references Jenkins Credentials for a user that doesn't exist.");
+            } catch (AuthenticationException e) {
+                if ( e instanceof BadCredentialsException ) {
+                    paramObj.setJenkinsAuthenticationError("Bad Jenkins Credentials: Wrong username or password provided in Velocity configuration in Jenkins.");
+                    System.out.println("Bad Jenkins Credentials: Wrong username or password provided in Velocity configuration in Jenkins.");
+                } else {
+                    paramObj.setJenkinsAuthenticationError("Bad Jenkins Credentials");
+                    System.out.println("Something else went wrong");
+                }
+            }
+        } else {
+            paramObj.setJenkinsAuthenticationError(NO_CREDENTIALS_PROVIDED);
         }
 
         try{
@@ -43,7 +76,7 @@ public abstract class AbstractSecuredAction {
 
     }
 
-    private Authentication authenticateCredentials(StandardUsernamePasswordCredentials providedCredentials) {
+    private Authentication authenticateCredentials(StandardUsernamePasswordCredentials providedCredentials) throws AuthenticationException {
         SecurityRealm realm = Jenkins.getInstance().getSecurityRealm();
         SecurityRealm.SecurityComponents securityComponents = realm.createSecurityComponents();
 
@@ -51,15 +84,7 @@ public abstract class AbstractSecuredAction {
 
         Authentication result = null;
         if(auth != null) {
-            try {
-                result = securityComponents.manager.authenticate(auth);
-            } catch (AuthenticationException e) {
-                if ( e instanceof BadCredentialsException ) {
-                    System.out.println("Wrong username or password");
-                } else {
-                    System.out.println("Something else went wrong");
-                }
-            }
+            result = securityComponents.manager.authenticate(auth);
         }
 
         return result;

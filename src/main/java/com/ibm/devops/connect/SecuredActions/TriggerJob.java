@@ -15,7 +15,7 @@ public class TriggerJob extends AbstractSecuredAction {
         TriggerJobParamObj triggerJobParamObj = (TriggerJobParamObj)paramObj;
 
         CloudWorkListener2 cwl = new CloudWorkListener2();
-        cwl.callSecured(triggerJobParamObj.socket, triggerJobParamObj.event, triggerJobParamObj.args);
+        cwl.callSecured(triggerJobParamObj.socket, triggerJobParamObj.event, triggerJobParamObj.getJenkinsAuthenticationError(), triggerJobParamObj.args);
     }
 
     public class TriggerJobParamObj extends AbstractSecuredAction.ParamObj {
