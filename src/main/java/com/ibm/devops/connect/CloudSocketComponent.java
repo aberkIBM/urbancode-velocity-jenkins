@@ -85,7 +85,7 @@ public class CloudSocketComponent {
             factory.setUsername("jenkins");
             factory.setPassword("jenkins");
 
-            String velocityHost = em.getVelocityHostname();
+            String host = em.getVelocityHostname();
             String rabbitHost = Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getRabbitMQHost();
             if (rabbitHost != null && !rabbitHost.equals("")) {
                 try {
@@ -93,13 +93,12 @@ public class CloudSocketComponent {
                         rabbitHost = rabbitHost.substring(0, rabbitHost.length() - 1);
                     }
                     URL urlObj = new URL(rabbitHost);
-                    rabbitHost = urlObj.getHost();
+                    host = urlObj.getHost();
                 } catch (MalformedURLException e) {
-                    log.warn("Provided Rabbit MQ Host is not a valid hostname. Using default : " + velocityHost, e);
-                    rabbitHost = velocityHost;
+                    log.warn("Provided Rabbit MQ Host is not a valid hostname. Using default : " + host, e);
                 }
             }
-            factory.setHost(rabbitHost);
+            factory.setHost(host);
 
             int port = 5672;
             String rabbitPort = Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getRabbitMQPort();
@@ -111,7 +110,6 @@ public class CloudSocketComponent {
                     log.warn("Provided Rabbit MQ port is not an integer.  Using default 5672");
                 }
             }
-
             factory.setPort(port);
 
             Connection conn = factory.newConnection();
