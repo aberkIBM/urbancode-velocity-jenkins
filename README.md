@@ -45,7 +45,7 @@ If the plugin is not available in the Jenkins publically hosted plugins, please 
 
 Navigate to the Jenkins configuration page `Manage Jenkins > Configure System > IBM Continuous Release (section)`.  Under the UrbanCode Velocity section paste the Integration ID and Integration Token values from Step 1 above.  Please add a credentials entry for a Jenkins user on whose behalf this plugin may access your Jenkins items.  Please `Apply` or save the values before clicking the `Test Connection` button to confirm your connection to UrbanCode Velocity.  Upon successful connection, your data will be posted to UrbanCode Velocity.
 
-![Jenkins Global Config Page](screenshots/jenkins-global-config-page.png)
+![Jenkins Global Config Page](screenshots/jenkins-config.png)
 
 ### License
 
