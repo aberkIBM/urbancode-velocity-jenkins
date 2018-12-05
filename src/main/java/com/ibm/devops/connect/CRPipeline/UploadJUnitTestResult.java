@@ -155,10 +155,9 @@ public class UploadJUnitTestResult extends Builder implements SimpleBuildStep {
                 .addBinaryBody("testArtifact", new File(f, filePath), ContentType.create("application/octet-stream"), "filename")
                 .build();
 
-            CloudPublisher cloudPublisher = new CloudPublisher();
             boolean success = false;
             try {
-                success = cloudPublisher.uploadQualityData(entity);
+                success = CloudPublisher.uploadQualityData(entity);
             } catch (Exception ex) {
                 listener.error("Error uploading quality data: " + ex.getClass() + " - " + ex.getMessage());
             }

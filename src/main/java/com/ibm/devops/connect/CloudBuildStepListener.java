@@ -54,8 +54,7 @@ public class CloudBuildStepListener extends BuildStepListener {
         }
         JenkinsJobStatus status = new JenkinsJobStatus(build, cloudCause, bs, listener, false, !canContinue);
         JSONObject statusUpdate = status.generate(false);
-        CloudPublisher cloudPublisher = new CloudPublisher();
-        cloudPublisher.uploadJobStatus(statusUpdate);
+        CloudPublisher.uploadJobStatus(statusUpdate);
     }
 
     public void started(AbstractBuild build, BuildStep bs, BuildListener listener) {
@@ -63,8 +62,7 @@ public class CloudBuildStepListener extends BuildStepListener {
         if(this.shouldListen(build)) {
             JenkinsJobStatus status = new JenkinsJobStatus(build, getCloudCause(build), bs, listener, true, false);
             JSONObject statusUpdate = status.generate(false);
-            CloudPublisher cloudPublisher = new CloudPublisher();
-            cloudPublisher.uploadJobStatus(statusUpdate);
+            CloudPublisher.uploadJobStatus(statusUpdate);
         }
     }
 
