@@ -200,8 +200,7 @@ public class CloudWorkListener2 {
                 if( errorMessage != null ) {
                     JenkinsJobStatus erroredJobStatus = new JenkinsJobStatus(null, cloudCause, null, null, true, true);
                     JSONObject statusUpdate = erroredJobStatus.generateErrorStatus(errorMessage);
-                    CloudPublisher cloudPublisher = new CloudPublisher();
-                    cloudPublisher.uploadJobStatus(statusUpdate);
+                    CloudPublisher.uploadJobStatus(statusUpdate);
                 }
 
             }

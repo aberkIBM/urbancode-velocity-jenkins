@@ -61,8 +61,7 @@ public class CloudItemListener extends ItemListener {
         if( !(item instanceof Folder) ) {
             JenkinsJob jenkinsJob= new JenkinsJob(item);
             log.info(ToStringBuilder.reflectionToString(jenkinsJob.toJson()) + " was " + phase);
-            CloudPublisher cloudPublisher = new CloudPublisher();
-            cloudPublisher.uploadJobInfo(jenkinsJob.toJson());
+            CloudPublisher.uploadJobInfo(jenkinsJob.toJson());
         }
     }
 
@@ -71,13 +70,12 @@ public class CloudItemListener extends ItemListener {
         List<Item> allProjects= JenkinsServer.getAllItems();
         List<JSONObject> allJobs = new ArrayList<JSONObject>();
 
-        CloudPublisher cloudPublisher = new CloudPublisher();
         for (Item anItem : allProjects) {
             if( !(anItem instanceof Folder) ) {
                 JenkinsJob jenkinsJob= new JenkinsJob(anItem);
                 allJobs.add(jenkinsJob.toJson());
 
-                cloudPublisher.uploadJobInfo(jenkinsJob.toJson());
+                CloudPublisher.uploadJobInfo(jenkinsJob.toJson());
             }
         }
         return allJobs;

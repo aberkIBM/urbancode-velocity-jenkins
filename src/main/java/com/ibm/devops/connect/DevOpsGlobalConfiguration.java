@@ -143,9 +143,7 @@ public class DevOpsGlobalConfiguration extends GlobalConfiguration {
         @QueryParameter("baseUrl") final String baseUrl)
     throws FormException {
         try {
-            CloudPublisher cloudPublisher = new CloudPublisher();
-
-            boolean connected = cloudPublisher.testConnection(syncId, syncToken, baseUrl);
+            boolean connected = CloudPublisher.testConnection(syncId, syncToken, baseUrl);
             if (connected) {
                 return FormValidation.ok("Successful Connection to Velocity Services");
             } else {
