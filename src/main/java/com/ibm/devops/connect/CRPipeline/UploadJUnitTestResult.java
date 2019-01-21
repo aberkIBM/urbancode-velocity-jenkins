@@ -147,8 +147,8 @@ public class UploadJUnitTestResult extends Builder implements SimpleBuildStep {
             
             
             payload.put("application", application);
-            payload.put("record", record)
-            payload.put("options", options)
+            payload.put("record", record);
+            payload.put("options", options);
            
 
             HttpEntity entity = MultipartEntityBuilder
