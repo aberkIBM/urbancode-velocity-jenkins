@@ -18,16 +18,12 @@ import java.util.List;
 
 import hudson.CopyOnWrite;
 import hudson.Extension;
-import hudson.model.Computer;
 import hudson.util.ListBoxModel;
 import hudson.util.FormValidation;
 import jenkins.model.GlobalConfiguration;
 import net.sf.json.JSONObject;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerResponse;
-import org.kohsuke.stapler.AncestorInPath;
-import com.ibm.devops.connect.CloudSocketComponent;
 import com.ibm.devops.connect.ConnectComputerListener;
 
 import com.cloudbees.plugins.credentials.CredentialsMatchers;
@@ -38,9 +34,6 @@ import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredenti
 import com.cloudbees.plugins.credentials.domains.URIRequirementBuilder;
 import hudson.security.ACL;
 import jenkins.model.Jenkins;
-
-import java.io.IOException;
-import javax.servlet.ServletException;
 
 import com.ibm.devops.connect.CloudPublisher;
 /**
@@ -143,9 +136,7 @@ public class DevOpsGlobalConfiguration extends GlobalConfiguration {
         @QueryParameter("baseUrl") final String baseUrl)
     throws FormException {
         try {
-            CloudPublisher cloudPublisher = new CloudPublisher();
-
-            boolean connected = cloudPublisher.testConnection(syncId, syncToken, baseUrl);
+            boolean connected = CloudPublisher.testConnection(syncId, syncToken, baseUrl);
             if (connected) {
                 return FormValidation.ok("Successful Connection to Velocity Services");
             } else {
@@ -188,6 +179,6 @@ public class DevOpsGlobalConfiguration extends GlobalConfiguration {
     private void reconnectCloudSocket() {
         ConnectComputerListener connectComputerListener = new ConnectComputerListener();
 
-        connectComputerListener.onOnline(Computer.currentComputer());
+        connectComputerListener.onOnline(Jenkins.getInstance().toComputer());
     }
 }

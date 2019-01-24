@@ -25,11 +25,16 @@ import net.sf.json.JSONArray;
 import com.google.gson.*;
 import jenkins.model.Jenkins;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.concurrent.FutureCallback;
+import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
+import org.apache.http.impl.nio.client.HttpAsyncClients;
 import org.apache.http.message.AbstractHttpMessage;
 import org.apache.http.entity.StringEntity;
+import org.apache.http.HttpResponse;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
@@ -37,15 +42,16 @@ import org.apache.http.conn.ssl.SSLContextBuilder;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
+import org.apache.http.ssl.SSLContexts;
+import org.apache.http.ssl.TrustStrategy;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
+import java.security.cert.X509Certificate;
 import java.security.NoSuchAlgorithmException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
+import javax.net.ssl.SSLContext;
 
 import com.ibm.devops.connect.Endpoints.EndpointManager;
 
@@ -53,59 +59,81 @@ import org.apache.http.HttpEntity;
 
 public class CloudPublisher  {
 	public static final Logger log = LoggerFactory.getLogger(CloudPublisher.class);
-	private String logPrefix= "[IBM Cloud DevOps] CloudPublisher#";
+	private static String logPrefix= "[IBM Cloud DevOps] CloudPublisher#";
 
-    private final String JENKINS_JOB_ENDPOINT_URL = "api/v1/jenkins/jobs";
-    private final String JENKINS_JOB_STATUS_ENDPOINT_URL = "api/v1/jenkins/jobStatus";
-    private final String JENKINS_TEST_CONNECTION_URL = "api/v1/jenkins/testConnection";
-    private final String INTEGRATIONS_ENDPOINT_URL = "api/v1/integrations";
-    private final String INTEGRATION_ENDPOINT_URL = "api/v1/integrations/{integration_id}";
+    private final static String JENKINS_JOB_ENDPOINT_URL = "api/v1/jenkins/jobs";
+    private final static String JENKINS_JOB_STATUS_ENDPOINT_URL = "api/v1/jenkins/jobStatus";
+    private final static String JENKINS_TEST_CONNECTION_URL = "api/v1/jenkins/testConnection";
 
-    private static String BUILD_API_URL = "/organizations/{org_name}/toolchainids/{toolchain_id}/buildartifacts/{build_artifact}/builds";
-    private final static String CONTENT_TYPE_JSON = "application/json";
-    private final static String CONTENT_TYPE_XML = "application/xml";
+    private static CloseableHttpClient httpClient;
+    private static CloseableHttpAsyncClient asyncHttpClient;
+    private static Boolean acceptAllCerts = true;
+    private static int requestTimeoutSeconds = 30;
 
-    // form fields from UI
-    private String applicationName;
-    private String orgName;
-    private String credentialsId;
-    private String toolchainName;
-
-    private String dlmsUrl;
-    private PrintStream printStream;
-    private File root;
-    private static String bluemixToken;
-    private static String preCredentials;
-
-    // fields to support jenkins pipeline
-    private String result;
-    private String gitRepo;
-    private String gitBranch;
-    private String gitCommit;
-    private String username;
-    private String password;
-    // optional customized build number
-    private String buildNumber;
-
-    public CloudPublisher() {
+    public static void ensureHttpClientInitialized() {
+        if (httpClient == null) {
+            httpClient = HttpClients.createDefault();
+            if (acceptAllCerts) {
+                try {
+                    SSLContextBuilder builder = new SSLContextBuilder();
+                    builder.loadTrustMaterial(null, new TrustSelfSignedStrategy());
+                    SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(builder.build(), new AllowAllHostnameVerifier());
+                    RequestConfig config = RequestConfig.custom()
+                        .setConnectTimeout(requestTimeoutSeconds * 1000)
+                        .setConnectionRequestTimeout(requestTimeoutSeconds * 1000)
+                        .setSocketTimeout(requestTimeoutSeconds * 1000).build();
+                    httpClient = HttpClients.custom().setSSLSocketFactory(sslsf).setDefaultRequestConfig(config).build();
+                } catch (NoSuchAlgorithmException nsae) {
+                    nsae.printStackTrace();
+                } catch (KeyManagementException kme) {
+                    kme.printStackTrace();
+                } catch (KeyStoreException kse) {
+                    kse.printStackTrace();
+                }
+            }
+        }
     }
 
-    private String getSyncApiUrl() {
+    public static void ensureAsyncHttpClientInitialized() {
+        if (asyncHttpClient == null) {
+            asyncHttpClient = HttpAsyncClients.createDefault();
+            if (acceptAllCerts) {
+                try {
+                    TrustStrategy acceptingTrustStrategy = new TrustStrategy() {
+                        public boolean isTrusted(X509Certificate[] certificate,  String authType) {
+                            return true;
+                        }
+                    };
+                    SSLContext sslContext = SSLContexts.custom().loadTrustMaterial(null, acceptingTrustStrategy).build();
+
+                    asyncHttpClient = HttpAsyncClients.custom()
+                            .setSSLHostnameVerifier(SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER)
+                            .setSSLContext(sslContext)
+                            .disableCookieManagement()
+                            .build();
+                } catch (NoSuchAlgorithmException nsae) {
+                    nsae.printStackTrace();
+                } catch (KeyManagementException kme) {
+                    kme.printStackTrace();
+                } catch (KeyStoreException kse) {
+                    kse.printStackTrace();
+                }
+            }
+            asyncHttpClient.start();
+        }
+    }
+
+    private static String getSyncApiUrl() {
         EndpointManager em = new EndpointManager();
         return em.getSyncApiEndpoint();
     }
 
-    private String getSyncApiUrl(String baseUrl) {
+    private static String getSyncApiUrl(String baseUrl) {
         EndpointManager em = new EndpointManager();
         return em.getSyncApiEndpoint(baseUrl);
     }
 
-    private String getSyncStoreUrl() {
-        EndpointManager em = new EndpointManager();
-        return em.getSyncStoreEndpoint();
-    }
-
-    private String getQualityDataUrl() {
+    private static String getQualityDataUrl() {
         EndpointManager em = new EndpointManager();
         return em.getQualityDataEndpoint();
     }
@@ -113,8 +141,8 @@ public class CloudPublisher  {
     /**
      * Upload the build information to Sync API - API V1.
      */
-    public boolean uploadJobInfo(JSONObject jobJson) {
-        String url = this.getSyncApiUrl() + JENKINS_JOB_ENDPOINT_URL;
+    public static void uploadJobInfo(JSONObject jobJson) {
+        String url = CloudPublisher.getSyncApiUrl() + JENKINS_JOB_ENDPOINT_URL;
 
         JSONArray payload = new JSONArray();
         payload.add(jobJson);
@@ -123,58 +151,46 @@ public class CloudPublisher  {
         System.out.println(url);
         System.out.println(jobJson.toString());
 
-        return postToSyncAPI(url, payload.toString());
+        CloudPublisher.postToSyncAPI(url, payload.toString());
     }
 
-    public boolean uploadJobStatus(JSONObject jobStatus) {
-
-        String url = this.getSyncApiUrl() + JENKINS_JOB_STATUS_ENDPOINT_URL;
-        return postToSyncAPI(url, jobStatus.toString());
+    public static void uploadJobStatus(JSONObject jobStatus) {
+        String url = CloudPublisher.getSyncApiUrl() + JENKINS_JOB_STATUS_ENDPOINT_URL;
+        CloudPublisher.postToSyncAPI(url, jobStatus.toString());
     }
 
-    public boolean uploadQualityData(HttpEntity entity) throws Exception {
+    public static boolean uploadQualityData(HttpEntity entity) throws Exception {
+        CloudPublisher.ensureHttpClientInitialized();
         String localLogPrefix= logPrefix + "uploadQualityData ";
-
         String resStr = "";
+        String url = CloudPublisher.getQualityDataUrl();
+        CloseableHttpResponse response = null;
 
-        String url = this.getQualityDataUrl();
-        CloseableHttpClient httpClient = HttpClients.createDefault();
+        try {
+            HttpPost postMethod = new HttpPost(url);
+            attachHeaders(postMethod);
+            postMethod.setEntity(entity);
 
-        boolean acceptAllCerts = true;
-
-        if (acceptAllCerts) {
-            try {
-                SSLContextBuilder builder = new SSLContextBuilder();
-                builder.loadTrustMaterial(null, new TrustSelfSignedStrategy());
-                SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
-                        builder.build(), new AllowAllHostnameVerifier());
-                httpClient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
-            } catch (NoSuchAlgorithmException nsae) {
-                nsae.printStackTrace();
-            } catch (KeyManagementException kme) {
-                kme.printStackTrace();
-            } catch (KeyStoreException kse) {
-                kse.printStackTrace();
+            response = httpClient.execute(postMethod);
+            resStr = EntityUtils.toString(response.getEntity());
+            if (response.getStatusLine().toString().contains("201")) {
+                log.info(localLogPrefix + "Upload Quality Data successfully");
+                return true;
+            } else {
+                throw new Exception("Bad response code when uploading Quality Data: " + response.getStatusLine() + " - " + resStr);
+            }
+        } finally {
+            if (response != null) {
+                try {
+                    response.close();
+                } catch (Exception e) {
+                    log.error("Could not close uploadQualityData response");
+                }
             }
         }
-
-        HttpPost postMethod = new HttpPost(url);
-
-        attachHeaders(postMethod);
-        postMethod.setEntity(entity);
-
-        CloseableHttpResponse response = httpClient.execute(postMethod);
-
-        resStr = EntityUtils.toString(response.getEntity());
-        if (response.getStatusLine().toString().contains("201")) {
-            log.info(localLogPrefix + "Upload Quality Data successfully");
-            return true;
-        } else {
-            throw new Exception("Bad response code when uploading Quality Data: " + response.getStatusLine() + " - " + resStr);
-        }
     }
 
-    private void attachHeaders(AbstractHttpMessage message) {
+    private static void attachHeaders(AbstractHttpMessage message) {
         String syncId = Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getSyncId();
         message.setHeader("sync_token", Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getSyncToken());
         message.setHeader("sync_id", syncId);
@@ -190,94 +206,54 @@ public class CloudPublisher  {
         message.setHeader("integration-id", syncId);
     }
 
-    private boolean postToSyncAPI(String url, String payload) {
-    	String localLogPrefix= logPrefix + "uploadJobInfo ";
-
-        String resStr = "";
-
+    private static void postToSyncAPI(String url, String payload) {
+        CloudPublisher.ensureAsyncHttpClientInitialized();
+        String localLogPrefix= logPrefix + "uploadJobInfo ";
         try {
-            CloseableHttpClient httpClient = HttpClients.createDefault();
-
-            boolean acceptAllCerts = true;
-
-            if (acceptAllCerts) {
-                try {
-                    SSLContextBuilder builder = new SSLContextBuilder();
-                    builder.loadTrustMaterial(null, new TrustSelfSignedStrategy());
-                    SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(builder.build(), new AllowAllHostnameVerifier());
-                    httpClient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
-                } catch (NoSuchAlgorithmException nsae) {
-                    nsae.printStackTrace();
-                } catch (KeyManagementException kme) {
-                    kme.printStackTrace();
-                } catch (KeyStoreException kse) {
-                    kse.printStackTrace();
-                }
-            }
-
             HttpPost postMethod = new HttpPost(url);
-
             attachHeaders(postMethod);
-
             postMethod.setHeader("Content-Type", "application/json");
-
             StringEntity data = new StringEntity(payload);
             postMethod.setEntity(data);
 
-            CloseableHttpResponse response = httpClient.execute(postMethod);
+            asyncHttpClient.execute(postMethod, new FutureCallback<HttpResponse>() {
+                public void completed(final HttpResponse response2) {
+                    if (response2.getStatusLine().toString().contains("200")) {
+                        log.info(localLogPrefix + "Upload Job Information successfully");
+                    } else {
+                        log.error(localLogPrefix + "Error: Upload Job has bad status code, response status " + response2.getStatusLine());
+                    }
+                    try {
+                        EntityUtils.toString(response2.getEntity());
+                    } catch (JsonSyntaxException e) {
+                        log.error(localLogPrefix + "Invalid Json response, response: " + response2.getEntity());
+                    } catch (IOException e) {
+                        log.error(localLogPrefix + "Input/Output error, response: " + response2.getEntity());
+                    }
+                }
 
-            resStr = EntityUtils.toString(response.getEntity());
-            if (response.getStatusLine().toString().contains("200")) {
-                // get 200 response
-                log.info(localLogPrefix + "Upload Job Information successfully");
-                return true;
+                public void failed(final Exception ex) {
+                    log.error(localLogPrefix + "Error: Failed to upload Job, response status " + ex.getMessage());
+                    ex.printStackTrace();
+                    if (ex instanceof IllegalStateException) {
+                        log.error(localLogPrefix + "Please check if you have the access to the configured tenant.");
+                    }
+                }
 
-            } else {
-                // if gets error status
-                log.error(localLogPrefix + "Error: Failed to upload Job, response status " + response.getStatusLine());
-            }
-        } catch (JsonSyntaxException e) {
-            log.error(localLogPrefix + "Invalid Json response, response: " + resStr);
-        } catch (IllegalStateException e) {
-            // will be triggered when 403 Forbidden
-            try {
-                log.error(localLogPrefix + "Please check if you have the access to " + URLEncoder.encode(this.orgName, "UTF-8") + " org");
-            } catch (UnsupportedEncodingException e1) {
-                e1.printStackTrace();
-            }
+                public void cancelled() {
+                    log.error(localLogPrefix + "Error: Upload Job cancelled.");
+                }
+            });
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
-        } catch (ClientProtocolException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
-        return false;
     }
 
-    public boolean testConnection(String syncId, String syncToken, String baseUrl) {
-        String url = this.getSyncApiUrl(baseUrl) + JENKINS_TEST_CONNECTION_URL;
+    public static boolean testConnection(String syncId, String syncToken, String baseUrl) {
+        CloudPublisher.ensureHttpClientInitialized();
+        String url = getSyncApiUrl(baseUrl) + JENKINS_TEST_CONNECTION_URL;
+        CloseableHttpResponse response = null;
         try {
-            CloseableHttpClient httpClient = HttpClients.createDefault();
-
-            boolean acceptAllCerts = true;
-
-            if (acceptAllCerts) {
-                try {
-                    SSLContextBuilder builder = new SSLContextBuilder();
-                    builder.loadTrustMaterial(null, new TrustSelfSignedStrategy());
-                    SSLConnectionSocketFactory sslsf = new SSLConnectionSocketFactory(
-                            builder.build(), new AllowAllHostnameVerifier());
-                    httpClient = HttpClients.custom().setSSLSocketFactory(sslsf).build();
-                } catch (NoSuchAlgorithmException nsae) {
-                    nsae.printStackTrace();
-                } catch (KeyManagementException kme) {
-                    kme.printStackTrace();
-                } catch (KeyStoreException kse) {
-                    kse.printStackTrace();
-                }
-            }
-
             HttpGet getMethod = new HttpGet(url);
             // postMethod = addProxyInformation(postMethod);
             getMethod.setHeader("sync_token", syncToken);
@@ -293,7 +269,8 @@ public class CloudPublisher  {
             getMethod.setHeader("instance-id", syncId);
             getMethod.setHeader("integration-id", syncId);
 
-            CloseableHttpResponse response = httpClient.execute(getMethod);
+            response = httpClient.execute(getMethod);
+
             if (response.getStatusLine().toString().contains("200")) {
                 // get 200 response
                 log.info("Connected to Velocity service successfully");
@@ -309,6 +286,14 @@ public class CloudPublisher  {
             log.error("Could not connect to Velocity services");
         } catch (IOException e) {
             log.error("Could not connect to Velocity services");
+        } finally {
+            if (response != null) {
+                try {
+                    response.close();
+                } catch (Exception e) {
+                    log.error("Could not close testconnection response");
+                }
+            }
         }
 
         return false;

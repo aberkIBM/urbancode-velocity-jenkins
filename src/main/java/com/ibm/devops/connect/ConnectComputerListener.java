@@ -10,13 +10,10 @@ package com.ibm.devops.connect;
 
 import hudson.slaves.ComputerListener;
 import hudson.model.Computer;
-import jenkins.model.Jenkins.MasterComputer;
 import hudson.Extension;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.ibm.devops.connect.CloudItemListener;
 
 import com.ibm.devops.connect.Endpoints.EndpointManager;
 
@@ -54,7 +51,7 @@ public class ConnectComputerListener extends ComputerListener {
         }
 
         try {
-        	log.info(logPrefix + "Connecting to Cloud Services...");
+            log.info(logPrefix + "Connecting to Cloud Services...");
             getCloudSocketInstance().connectToCloudServices();
         } catch (Exception e) {
             log.error(logPrefix + "Exception caught while connecting to Cloud Services: " + e);

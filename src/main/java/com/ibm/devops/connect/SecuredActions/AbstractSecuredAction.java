@@ -95,7 +95,7 @@ public abstract class AbstractSecuredAction {
 
         userDetails.getAuthorities();
 
-        Authentication auth = new UsernamePasswordAuthenticationToken (providedCredentials.getUsername(), providedCredentials.getPassword(), userDetails.getAuthorities());
+        Authentication auth = new UsernamePasswordAuthenticationToken(providedCredentials.getUsername(), providedCredentials.getPassword().getPlainText(), userDetails.getAuthorities());
 
         return auth;
     }
