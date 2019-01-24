@@ -16,7 +16,7 @@ import org.acegisecurity.BadCredentialsException;
 import org.acegisecurity.userdetails.UsernameNotFoundException;
 
 public abstract class AbstractSecuredAction {
-    public static String NO_CREDENTIALS_PROVIDED = "No Credentials Provided";
+    public static final String NO_CREDENTIALS_PROVIDED = "No Credentials Provided";
 
     protected abstract void run(ParamObj paramObj);
 
@@ -53,6 +53,7 @@ public abstract class AbstractSecuredAction {
                 SecurityContextHolder.getContext().setAuthentication(authenticatedAuth);
             } catch (UsernameNotFoundException e) {
                 paramObj.setJenkinsAuthenticationError("Bad Jenkins Credentials: Velocity configuration in Jenkins references Jenkins Credentials for a user that doesn't exist.");
+                System.out.println("Bad Jenkins Credentials: Wrong username provided in Velocity configuration in Jenkins.");
             } catch (AuthenticationException e) {
                 if ( e instanceof BadCredentialsException ) {
                     paramObj.setJenkinsAuthenticationError("Bad Jenkins Credentials: Wrong username or password provided in Velocity configuration in Jenkins.");
