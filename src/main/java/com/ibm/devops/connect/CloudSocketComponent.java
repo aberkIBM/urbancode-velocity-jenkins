@@ -48,6 +48,8 @@ public class CloudSocketComponent {
     final private String cloudUrl;
     private ConnectSocket socket;
 
+    private Connection conn;
+
     private static boolean otherIntegrationExists = false;
 
     private static void setOtherIntegrationsExists(boolean exists) {
@@ -112,7 +114,11 @@ public class CloudSocketComponent {
             }
             factory.setPort(port);
 
-            Connection conn = factory.newConnection();
+            if(this.conn != null && this.conn.isOpen()) {
+                this.conn.abort();
+            }
+
+            this.conn = factory.newConnection();
 
             Channel channel = conn.createChannel();
 
