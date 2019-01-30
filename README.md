@@ -29,11 +29,11 @@ in the root of this repository. Optionally pass the `-DskipTests` flag to speed 
 
 Navigate to the Settings Page of UrbanCode Velocity and select the Integrations section in the left navigation. Create a new Jenkins integration.
 
-![Integrations Page](screenshots/integrations-page.png)
+![Integrations Page](screenshots/integrations-page.PNG)
 
 In the dialog box provide a logical name that represents the Jenkins instance that you are attempting to connect.  This will generate an Integration Id and Integration Token pair.  When the time comes this dialog provides "Copy to Clipboard" button on these fields.
 
-![Jenkins Integration Dialog](screenshots/jenkins-dialog.png)
+![Jenkins Integration Dialog](screenshots/jenkins-dialog.PNG)
 
 ### 2. Install this plugin on your Jenkins instance
 
@@ -45,7 +45,7 @@ If the plugin is not available in the Jenkins publically hosted plugins, please 
 
 Navigate to the Jenkins configuration page `Manage Jenkins > Configure System > IBM Continuous Release (section)`.  Under the UrbanCode Velocity section paste the Integration ID and Integration Token values from Step 1 above.  Please add a credentials entry for a Jenkins user on whose behalf this plugin may access your Jenkins items.  Please `Apply` or save the values before clicking the `Test Connection` button to confirm your connection to UrbanCode Velocity.  Upon successful connection, your data will be posted to UrbanCode Velocity.
 
-![Jenkins Global Config Page](screenshots/jenkins-config.png)
+![Jenkins Global Config Page](screenshots/jenkins-config.PNG)
 
 ### License
 
