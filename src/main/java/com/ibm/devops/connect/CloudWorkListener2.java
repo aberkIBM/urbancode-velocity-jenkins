@@ -78,7 +78,7 @@ import com.ibm.devops.connect.SecuredActions.AbstractSecuredAction;
  */
 public class CloudWorkListener2 {
 	public static final Logger log = LoggerFactory.getLogger(CloudWorkListener2.class);
-    private String logPrefix= "[IBM Cloud DevOps] CloudWorkListener2#";
+    private String logPrefix= "[UrbanCode Velocity] CloudWorkListener2#";
 
     public CloudWorkListener2() {
 

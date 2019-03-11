@@ -20,7 +20,7 @@ import com.ibm.devops.connect.Endpoints.EndpointManager;
 @Extension
 public class ConnectComputerListener extends ComputerListener {
 	public static final Logger log = LoggerFactory.getLogger(ConnectComputerListener.class);
-    private String logPrefix= "[IBM Cloud DevOps] ConnectComputerListener#";
+    private String logPrefix= "[UrbanCode Velocity] ConnectComputerListener#";
 
     private static CloudSocketComponent cloudSocketInstance;
 

@@ -58,7 +58,7 @@ public class CloudBuildStepListener extends BuildStepListener {
     }
 
     public void started(AbstractBuild build, BuildStep bs, BuildListener listener) {
-        // We listen to jobs that are started by IBM Cloud only
+        // We listen to jobs that are started by UrbanCode Velocity only
         if(this.shouldListen(build)) {
             JenkinsJobStatus status = new JenkinsJobStatus(build, getCloudCause(build), bs, listener, true, false);
             JSONObject statusUpdate = status.generate(false);

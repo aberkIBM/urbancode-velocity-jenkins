@@ -94,7 +94,7 @@ public class UploadJUnitTestResult extends Builder implements SimpleBuildStep {
          */
         @Override
         public String getDisplayName() {
-            return "Pass Properties to Continuous Release Version";
+            return "Pass Properties to UrbanCode Velocity Version";
         }
 
         @Override
