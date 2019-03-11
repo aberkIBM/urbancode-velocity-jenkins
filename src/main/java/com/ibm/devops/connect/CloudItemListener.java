@@ -35,7 +35,7 @@ import com.cloudbees.hudson.plugins.folder.Folder;
 @Extension
 public class CloudItemListener extends ItemListener {
     public static final Logger log = LoggerFactory.getLogger(CloudItemListener.class);
-    private String logPrefix= "[IBM Cloud DevOps] CloudItemListener#";
+    private String logPrefix= "[UrbanCode Velocity] CloudItemListener#";
 
     public CloudItemListener(){
         logPrefix= logPrefix + "CloudItemListener ";

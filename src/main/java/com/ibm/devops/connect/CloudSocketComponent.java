@@ -42,7 +42,7 @@ import java.net.MalformedURLException;
 public class CloudSocketComponent {
 
     public static final Logger log = LoggerFactory.getLogger(CloudSocketComponent.class);
-    private String logPrefix= "[IBM Cloud DevOps] CloudSocketComponent#";
+    private String logPrefix= "[UrbanCode Velocity] CloudSocketComponent#";
 
     final private IWorkListener workListener;
     final private String cloudUrl;

@@ -12,7 +12,7 @@ import com.ibm.devops.connect.Status.DRAData;
 import com.ibm.devops.connect.Status.SourceData;
 
 /**
-* This is the cause object that is attached to a build if it is started by the IBM Cloud.
+* This is the cause object that is attached to a build if it is started by UrbanCode Velocity.
 */
 public class CloudCause extends Cause {
 
@@ -43,7 +43,7 @@ public class CloudCause extends Cause {
 
     @Override
     public String getShortDescription() {
-        return "Started due to a request from IBM Continuous Release. Work Id: " + this.workId;
+        return "Started due to a request from UrbanCode Velocity. Work Id: " + this.workId;
     }
 
     public void addStep(String name, String status, String message, boolean isFatal) {

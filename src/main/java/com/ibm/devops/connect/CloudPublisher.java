@@ -59,7 +59,7 @@ import org.apache.http.HttpEntity;
 
 public class CloudPublisher  {
 	public static final Logger log = LoggerFactory.getLogger(CloudPublisher.class);
-	private static String logPrefix= "[IBM Cloud DevOps] CloudPublisher#";
+	private static String logPrefix= "[UrbanCode Velocity] CloudPublisher#";
 
     private final static String JENKINS_JOB_ENDPOINT_URL = "api/v1/jenkins/jobs";
     private final static String JENKINS_JOB_STATUS_ENDPOINT_URL = "api/v1/jenkins/jobStatus";

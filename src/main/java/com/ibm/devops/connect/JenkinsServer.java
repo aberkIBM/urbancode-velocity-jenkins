@@ -50,7 +50,7 @@ import java.nio.charset.Charset;
 
 public class JenkinsServer {
 	public static final Logger log = LoggerFactory.getLogger(JenkinsServer.class);
-    private static String logPrefix= "[IBM Cloud DevOps] JenkinsServer#";
+    private static String logPrefix= "[UrbanCode Velocity] JenkinsServer#";
 
     // creds
     private static String BLX_CREDS= "IBM_CLOUD_DEVOPS_CREDS_API";

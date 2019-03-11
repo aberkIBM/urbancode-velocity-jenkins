@@ -97,7 +97,7 @@ public class ContinuousReleaseProperties extends Builder implements SimpleBuildS
          */
         @Override
         public String getDisplayName() {
-            return "Pass Properties to Continuous Release Version";
+            return "Pass Properties to UrbanCode Velocity Version";
         }
 
         @Override
