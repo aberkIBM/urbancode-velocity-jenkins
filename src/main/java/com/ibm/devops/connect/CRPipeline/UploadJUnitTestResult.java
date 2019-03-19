@@ -122,6 +122,7 @@ public class UploadJUnitTestResult extends Builder implements SimpleBuildStep {
             String appId = properties.get("appId");
             String appExtId = properties.get("appExtId");
             String appName = properties.get("appName");
+            String environment = properties.get("environment");
             Object combineTestSuites = properties.get("combineTestSuites");
 
             JSONObject payload = new JSONObject();
@@ -142,7 +143,7 @@ public class UploadJUnitTestResult extends Builder implements SimpleBuildStep {
             }
 
             payload.put("metricName", testSetName);
-            payload.put("environment", "Prod");
+            payload.put("environment", environment);
             payload.put("tenant_id", tenantId);
             
             
