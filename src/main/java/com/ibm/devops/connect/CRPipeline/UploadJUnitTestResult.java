@@ -122,32 +122,35 @@ public class UploadJUnitTestResult extends Builder implements SimpleBuildStep {
             String appId = properties.get("appId");
             String appExtId = properties.get("appExtId");
             String appName = properties.get("appName");
+            String environment = properties.get("environment");
             Object combineTestSuites = properties.get("combineTestSuites");
 
             JSONObject payload = new JSONObject();
-            JSONObject data = new JSONObject();
             JSONObject application = new JSONObject();
+            JSONObject record = new JSONObject();
+            JSONObject options = new JSONObject();
 
             application.put("id", appId);
             application.put("name", appName);
             application.put("externalId", appExtId);
 
-            payload.put("type", "junitXML");
-            payload.put("dataFormat", "xml");
-            payload.put("environment", "Prod");
-            payload.put("authToken", "12345");
-            payload.put("application", application);
+            record.put("pluginType", "junitXML");
+            record.put("dataFormat", "xml");
+            record.put("recordName", name);
 
-            data.put("tenant_id", tenantId);
-            data.put("name", name);
-            data.put("testSetName", testSetName);
-            data.put("enricherType", "JUnit Quality Data");
-            data.put("category", "Unit Tests");
             if (combineTestSuites != null) {
-                data.put("combineTestSuites", combineTestSuites.toString());
+                options.put("combineTestSuites", combineTestSuites.toString());
             }
 
-            payload.put("data", data);
+            payload.put("metricName", testSetName);
+            payload.put("environment", environment);
+            payload.put("tenant_id", tenantId);
+            
+            
+            payload.put("application", application);
+            payload.put("record", record);
+            payload.put("options", options);
+           
 
             HttpEntity entity = MultipartEntityBuilder
                 .create()
