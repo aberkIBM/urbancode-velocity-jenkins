@@ -24,6 +24,10 @@ public class EndpointManager {
         return endpointProvider.getSyncApiEndpoint(baseUrl);
     }
 
+    public String getReleaseEvensApiEndpoint() {
+        return endpointProvider.getReleaseEvensApiEndpoint();
+    }
+
     public String getSyncStoreEndpoint() {
         return endpointProvider.getSyncStoreEndpoint();
     }

@@ -94,7 +94,7 @@ public class UploadJUnitTestResult extends Builder implements SimpleBuildStep {
          */
         @Override
         public String getDisplayName() {
-            return "Pass Properties to UrbanCode Velocity Version";
+            return "Upload JUnit formatted results to UrbanCode Velocity";
         }
 
         @Override
@@ -145,12 +145,12 @@ public class UploadJUnitTestResult extends Builder implements SimpleBuildStep {
             payload.put("metricName", testSetName);
             payload.put("environment", environment);
             payload.put("tenant_id", tenantId);
-            
-            
+
+
             payload.put("application", application);
             payload.put("record", record);
             payload.put("options", options);
-           
+
 
             HttpEntity entity = MultipartEntityBuilder
                 .create()

@@ -64,6 +64,8 @@ public class CloudPublisher  {
     private final static String JENKINS_JOB_ENDPOINT_URL = "api/v1/jenkins/jobs";
     private final static String JENKINS_JOB_STATUS_ENDPOINT_URL = "api/v1/jenkins/jobStatus";
     private final static String JENKINS_TEST_CONNECTION_URL = "api/v1/jenkins/testConnection";
+    private final static String BUILD_UPLOAD_URL = "api/v1/builds";
+    private final static String DEPLOYMENT_UPLOAD_URL = "api/v1/deployments";
 
     private static CloseableHttpClient httpClient;
     private static CloseableHttpAsyncClient asyncHttpClient;
@@ -138,6 +140,16 @@ public class CloudPublisher  {
         return em.getQualityDataEndpoint();
     }
 
+    private static String getBuildUploadUrl() {
+        EndpointManager em = new EndpointManager();
+        return em.getReleaseEvensApiEndpoint() + BUILD_UPLOAD_URL;
+    }
+
+    private static String getDeploymentUploadUrl() {
+        EndpointManager em = new EndpointManager();
+        return em.getReleaseEvensApiEndpoint() + DEPLOYMENT_UPLOAD_URL;
+    }
+
     /**
      * Upload the build information to Sync API - API V1.
      */
@@ -157,6 +169,70 @@ public class CloudPublisher  {
     public static void uploadJobStatus(JSONObject jobStatus) {
         String url = CloudPublisher.getSyncApiUrl() + JENKINS_JOB_STATUS_ENDPOINT_URL;
         CloudPublisher.postToSyncAPI(url, jobStatus.toString());
+    }
+
+    public static void uploadBuild(String payload) throws Exception {
+        CloudPublisher.ensureHttpClientInitialized();
+        String localLogPrefix= logPrefix + "uploadBuild ";
+        String resStr = "";
+        String url = CloudPublisher.getBuildUploadUrl();
+        CloseableHttpResponse response = null;
+
+        try {
+            HttpPost postMethod = new HttpPost(url);
+            attachHeaders(postMethod);
+            postMethod.setHeader("Content-Type", "application/json");
+            postMethod.setHeader("Authorization", "Bearer " + Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getApiToken());
+            postMethod.setEntity(new StringEntity(payload));
+
+            response = httpClient.execute(postMethod);
+            resStr = EntityUtils.toString(response.getEntity());
+            if (response.getStatusLine().toString().contains("200")) {
+                log.info(localLogPrefix + "Upload Build successfully");
+            } else {
+                throw new Exception("Bad response code when uploading Build: " + response.getStatusLine() + " - " + resStr);
+            }
+        } finally {
+            if (response != null) {
+                try {
+                    response.close();
+                } catch (Exception e) {
+                    log.error("Could not close uploadBuild response");
+                }
+            }
+        }
+    }
+
+    public static void uploadDeployment(String payload) throws Exception {
+        CloudPublisher.ensureHttpClientInitialized();
+        String localLogPrefix= logPrefix + "uploadDeployment ";
+        String resStr = "";
+        String url = CloudPublisher.getDeploymentUploadUrl();
+        CloseableHttpResponse response = null;
+
+        try {
+            HttpPost postMethod = new HttpPost(url);
+            attachHeaders(postMethod);
+            postMethod.setHeader("Content-Type", "application/json");
+            postMethod.setHeader("Authorization", "Bearer " + Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getApiToken());
+            postMethod.setEntity(new StringEntity(payload));
+
+            response = httpClient.execute(postMethod);
+            resStr = EntityUtils.toString(response.getEntity());
+            if (response.getStatusLine().toString().contains("200")) {
+                log.info(localLogPrefix + "Upload Deployment successfully");
+            } else {
+                throw new Exception("Bad response code when uploading Deployment: " + response.getStatusLine() + " - " + resStr);
+            }
+        } finally {
+            if (response != null) {
+                try {
+                    response.close();
+                } catch (Exception e) {
+                    log.error("Could not close uploadDeployment response");
+                }
+            }
+        }
     }
 
     public static boolean uploadQualityData(HttpEntity entity) throws Exception {

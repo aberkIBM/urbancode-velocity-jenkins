@@ -49,6 +49,7 @@ public class DevOpsGlobalConfiguration extends GlobalConfiguration {
     private String credentialsId;
     private String rabbitMQPort;
     private String rabbitMQHost;
+    private String apiToken;
 
     public DevOpsGlobalConfiguration() {
         load();
@@ -69,6 +70,15 @@ public class DevOpsGlobalConfiguration extends GlobalConfiguration {
 
     public void setSyncToken(String syncToken) {
         this.syncToken = syncToken;
+        save();
+    }
+
+    public String getApiToken() {
+        return apiToken;
+    }
+
+    public void setApiToken(String apiToken) {
+        this.apiToken = apiToken;
         save();
     }
 
@@ -118,6 +128,7 @@ public class DevOpsGlobalConfiguration extends GlobalConfiguration {
         credentialsId = formData.getString("credentialsId");
         rabbitMQPort = formData.getString("rabbitMQPort");
         rabbitMQHost = formData.getString("rabbitMQHost");
+        apiToken = formData.getString("apiToken");
         save();
 
         reconnectCloudSocket();
