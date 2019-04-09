@@ -13,6 +13,7 @@ import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.AbstractProject;
 import hudson.model.Cause;
+import hudson.model.Cause.UpstreamCause;
 import hudson.model.Cause.UserIdCause;
 import hudson.model.Result;
 import hudson.model.Run;
@@ -181,6 +182,9 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
                 if (cause instanceof UserIdCause) {
                     UserIdCause userCause = (UserIdCause)cause;
                     payload.put("by_user", userCause.getUserName());
+                } else if (cause instanceof UpstreamCause) {
+                    UpstreamCause upstreamCause = (UpstreamCause)cause;
+                    payload.put("by_user", "Upstream job \"" + upstreamCause.getUpstreamProject() + "\", build \"" + upstreamCause.getUpstreamBuild() + "\"");
                 }
             }
         }

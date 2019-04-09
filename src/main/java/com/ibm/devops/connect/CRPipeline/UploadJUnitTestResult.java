@@ -20,8 +20,8 @@ import hudson.model.TaskListener;
 import hudson.tasks.Builder;
 import hudson.tasks.BuildStepDescriptor;
 
+import jenkins.model.Jenkins;
 import jenkins.tasks.SimpleBuildStep;
-
 
 import java.io.File;
 import java.io.IOException;
@@ -58,7 +58,7 @@ public class UploadJUnitTestResult extends Builder implements SimpleBuildStep {
 
         Object fatalFailure = this.properties.get("fatal");
 
-        boolean success = workspace.act(new FileUploader(this.properties, listener));
+        boolean success = workspace.act(new FileUploader(this.properties, listener, Jenkins.getInstance().getRootUrl() + build.getUrl()));
         if (!success) {
             if (fatalFailure != null && fatalFailure.toString().equals("true")) {
                 build.setResult(Result.FAILURE);
@@ -106,10 +106,12 @@ public class UploadJUnitTestResult extends Builder implements SimpleBuildStep {
     private static final class FileUploader implements FileCallable<Boolean> {
         private Map<String, String> properties;
         private TaskListener listener;
+        private String buildUrl;
 
-        public FileUploader(Map<String, String> properties, TaskListener listener) {
+        public FileUploader(Map<String, String> properties, TaskListener listener, String buildUrl) {
             this.properties = properties;
             this.listener = listener;
+            this.buildUrl = buildUrl;
         }
 
         @Override public Boolean invoke(File f, VirtualChannel channel) {
@@ -124,6 +126,8 @@ public class UploadJUnitTestResult extends Builder implements SimpleBuildStep {
             String appName = properties.get("appName");
             String environment = properties.get("environment");
             Object combineTestSuites = properties.get("combineTestSuites");
+            String metricDefinitionId = properties.get("metricDefinitionId");
+            String buildId = properties.get("buildId");
 
             JSONObject payload = new JSONObject();
             JSONObject application = new JSONObject();
@@ -137,6 +141,7 @@ public class UploadJUnitTestResult extends Builder implements SimpleBuildStep {
             record.put("pluginType", "junitXML");
             record.put("dataFormat", "xml");
             record.put("recordName", name);
+            record.put("metricDefinitionId", metricDefinitionId);
 
             if (combineTestSuites != null) {
                 options.put("combineTestSuites", combineTestSuites.toString());
@@ -146,11 +151,18 @@ public class UploadJUnitTestResult extends Builder implements SimpleBuildStep {
             payload.put("environment", environment);
             payload.put("tenant_id", tenantId);
 
-
             payload.put("application", application);
             payload.put("record", record);
             payload.put("options", options);
 
+            JSONObject build = new JSONObject();
+            if (buildId != null) {
+                build.put("id", buildId);
+            }
+            build.put("url", this.buildUrl);
+            payload.put("build", build);
+
+System.out.println("TEST payload: " + payload.toString(2));
 
             HttpEntity entity = MultipartEntityBuilder
                 .create()

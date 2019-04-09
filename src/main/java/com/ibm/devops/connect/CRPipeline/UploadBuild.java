@@ -13,6 +13,7 @@ import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.AbstractProject;
 import hudson.model.Cause;
+import hudson.model.Cause.UpstreamCause;
 import hudson.model.Cause.UserIdCause;
 import hudson.model.Result;
 import hudson.model.Run;
@@ -37,8 +38,8 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
         FAILURE
     }
 
-    private String id;
     private String tenantId;
+    private String id;
     private String revision;
     private String requestor;
     private STATUS status;
@@ -50,8 +51,8 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
 
     @DataBoundConstructor
     public UploadBuild(
-        String id,
         String tenantId,
+        String id,
         String revision,
         String requestor,
         STATUS status,
@@ -61,8 +62,8 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
         String appId,
         String appExtId
     ) {
-        this.id = id;
         this.tenantId = tenantId;
+        this.id = id;
         this.revision = revision;
         this.requestor = requestor;
         this.status = status;
@@ -136,6 +137,9 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
                 if (cause instanceof UserIdCause) {
                     UserIdCause userCause = (UserIdCause)cause;
                     payload.put("requestor", userCause.getUserName());
+                } else if (cause instanceof UpstreamCause) {
+                    UpstreamCause upstreamCause = (UpstreamCause)cause;
+                    payload.put("requestor", "Upstream job \"" + upstreamCause.getUpstreamProject() + "\", build \"" + upstreamCause.getUpstreamBuild() + "\"");
                 }
             }
         }
@@ -158,12 +162,15 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
         } else {
             payload.put("endTime", System.currentTimeMillis());
         }
+        if (this.id != null) {
+            payload.put("id", this.id);
+        } else {
+            payload.put("id", build.getParent().getName() + " - " + build.getId());
+        }
 
         // build-derived inputs
         payload.put("name", build.getDisplayName());
         payload.put("url", Jenkins.getInstance().getRootUrl() + build.getUrl());
-        payload.put("id", build.getParent().getName() + " - " + build.getId());
-
 
         System.out.println("TEST payload: " + payload.toString(2));
 
