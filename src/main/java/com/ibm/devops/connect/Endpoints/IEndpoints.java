@@ -15,4 +15,6 @@ public interface IEndpoints {
     public String getVelocityHostname();
 
     public String getReleaseEvensApiEndpoint();
+
+    public String getDotsEndpoint();
 }

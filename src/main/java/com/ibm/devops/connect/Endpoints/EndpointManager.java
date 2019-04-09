@@ -28,6 +28,10 @@ public class EndpointManager {
         return endpointProvider.getReleaseEvensApiEndpoint();
     }
 
+    public String getDotsEndpoint() {
+        return endpointProvider.getDotsEndpoint();
+    }
+
     public String getSyncStoreEndpoint() {
         return endpointProvider.getSyncStoreEndpoint();
     }

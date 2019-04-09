@@ -28,6 +28,7 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.concurrent.FutureCallback;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
@@ -47,6 +48,7 @@ import org.apache.http.ssl.TrustStrategy;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.security.cert.X509Certificate;
 import java.security.NoSuchAlgorithmException;
 import java.security.KeyManagementException;
@@ -150,6 +152,11 @@ public class CloudPublisher  {
         return em.getReleaseEvensApiEndpoint() + DEPLOYMENT_UPLOAD_URL;
     }
 
+    private static String getDotsUrl() {
+        EndpointManager em = new EndpointManager();
+        return em.getDotsEndpoint();
+    }
+
     /**
      * Upload the build information to Sync API - API V1.
      */
@@ -233,6 +240,44 @@ public class CloudPublisher  {
                 }
             }
         }
+    }
+
+    public static String checkGate(String pipelineId, String stageName, String buildId) throws Exception {
+        CloudPublisher.ensureHttpClientInitialized();
+        String localLogPrefix= logPrefix + "checkGate ";
+        String resStr = "";
+        String url = CloudPublisher.getDotsUrl();
+        CloseableHttpResponse response = null;
+        String result = "";
+
+        try {
+            URIBuilder builder = new URIBuilder(url);
+            builder.setParameter("pipelineId", pipelineId);
+            builder.setParameter("stageName", stageName);
+            builder.setParameter("buildId", buildId);
+            HttpGet getMethod = new HttpGet(builder.build());
+            attachHeaders(getMethod);
+            getMethod.setHeader("Accept", "application/json");
+            getMethod.setHeader("Authorization", "Bearer " + Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getApiToken());
+
+            response = httpClient.execute(getMethod);
+            resStr = EntityUtils.toString(response.getEntity());
+            if (response.getStatusLine().toString().contains("200")) {
+                log.info(localLogPrefix + "Gates Checked Successfully");
+                result = resStr;
+            } else {
+                throw new Exception("Bad response code when uploading Deployment: " + response.getStatusLine() + " - " + resStr);
+            }
+        } finally {
+            if (response != null) {
+                try {
+                    response.close();
+                } catch (Exception e) {
+                    log.error("Could not close uploadDeployment response");
+                }
+            }
+        }
+        return result;
     }
 
     public static boolean uploadQualityData(HttpEntity entity) throws Exception {
