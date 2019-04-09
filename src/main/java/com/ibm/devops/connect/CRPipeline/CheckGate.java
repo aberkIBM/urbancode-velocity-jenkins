@@ -32,17 +32,17 @@ public class CheckGate extends Builder implements SimpleBuildStep {
 
     private String pipelineId;
     private String stageName;
-    private String buildId;
+    private String versionId;
 
     @DataBoundConstructor
     public CheckGate(
         String pipelineId,
         String stageName,
-        String buildId
+        String versionId
     ) {
         this.pipelineId = pipelineId;
         this.stageName = stageName;
-        this.buildId = buildId;
+        this.versionId = versionId;
     }
 
     public String getPipelineId() {
@@ -53,8 +53,8 @@ public class CheckGate extends Builder implements SimpleBuildStep {
         return this.stageName;
     }
 
-    public String getBuildId() {
-        return this.buildId;
+    public String getVersionId() {
+        return this.versionId;
     }
 
     @Override
@@ -62,7 +62,7 @@ public class CheckGate extends Builder implements SimpleBuildStep {
             throws AbortException, InterruptedException, IOException {
 
         try {
-            String result = CloudPublisher.checkGate(this.pipelineId, this.stageName, this.buildId);
+            String result = CloudPublisher.checkGate(this.pipelineId, this.stageName, this.versionId);
             JSONObject resultObj = JSONObject.fromObject(result);
             Iterator<?> keys = resultObj.keys();
             Boolean anyGatePassed = false;

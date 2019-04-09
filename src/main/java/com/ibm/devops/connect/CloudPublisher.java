@@ -195,7 +195,7 @@ public class CloudPublisher  {
             response = httpClient.execute(postMethod);
             resStr = EntityUtils.toString(response.getEntity());
             if (response.getStatusLine().toString().contains("200")) {
-                log.info(localLogPrefix + "Upload Build successfully");
+                log.info(localLogPrefix + "Uploaded Build successfully");
             } else {
                 throw new Exception("Bad response code when uploading Build: " + response.getStatusLine() + " - " + resStr);
             }
@@ -227,7 +227,7 @@ public class CloudPublisher  {
             response = httpClient.execute(postMethod);
             resStr = EntityUtils.toString(response.getEntity());
             if (response.getStatusLine().toString().contains("200")) {
-                log.info(localLogPrefix + "Upload Deployment successfully");
+                log.info(localLogPrefix + "Uploaded Deployment successfully");
             } else {
                 throw new Exception("Bad response code when uploading Deployment: " + response.getStatusLine() + " - " + resStr);
             }
@@ -242,7 +242,7 @@ public class CloudPublisher  {
         }
     }
 
-    public static String checkGate(String pipelineId, String stageName, String buildId) throws Exception {
+    public static String checkGate(String pipelineId, String stageName, String versionId) throws Exception {
         CloudPublisher.ensureHttpClientInitialized();
         String localLogPrefix= logPrefix + "checkGate ";
         String resStr = "";
@@ -254,7 +254,7 @@ public class CloudPublisher  {
             URIBuilder builder = new URIBuilder(url);
             builder.setParameter("pipelineId", pipelineId);
             builder.setParameter("stageName", stageName);
-            builder.setParameter("buildId", buildId);
+            builder.setParameter("versionId", versionId);
             HttpGet getMethod = new HttpGet(builder.build());
             attachHeaders(getMethod);
             getMethod.setHeader("Accept", "application/json");
