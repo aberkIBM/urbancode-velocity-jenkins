@@ -142,6 +142,11 @@ public class CloudPublisher  {
         return em.getQualityDataEndpoint();
     }
 
+    private static String getQualityDataRawUrl() {
+        EndpointManager em = new EndpointManager();
+        return em.getQualityDataRawEndpoint();
+    }
+
     private static String getBuildUploadUrl() {
         EndpointManager em = new EndpointManager();
         return em.getReleaseEvensApiEndpoint() + BUILD_UPLOAD_URL;
@@ -306,6 +311,38 @@ public class CloudPublisher  {
                     response.close();
                 } catch (Exception e) {
                     log.error("Could not close uploadQualityData response");
+                }
+            }
+        }
+    }
+
+    public static void uploadQualityDataRaw(String payload) throws Exception {
+        CloudPublisher.ensureHttpClientInitialized();
+        String localLogPrefix= logPrefix + "uploadMetricDataRaw ";
+        String resStr = "";
+        String url = CloudPublisher.getQualityDataRawUrl();
+        CloseableHttpResponse response = null;
+
+        try {
+            HttpPost postMethod = new HttpPost(url);
+            attachHeaders(postMethod);
+            postMethod.setHeader("Content-Type", "application/json");
+            postMethod.setHeader("Authorization", "Bearer " + Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getApiToken());
+            postMethod.setEntity(new StringEntity(payload));
+
+            response = httpClient.execute(postMethod);
+            resStr = EntityUtils.toString(response.getEntity());
+            if (response.getStatusLine().toString().contains("200")) {
+                log.info(localLogPrefix + "Uploaded Metric (raw) successfully");
+            } else {
+                throw new Exception("Bad response code when uploading Metric (raw): " + response.getStatusLine() + " - " + resStr);
+            }
+        } finally {
+            if (response != null) {
+                try {
+                    response.close();
+                } catch (Exception e) {
+                    log.error("Could not close uploadQualityDataRaw response");
                 }
             }
         }

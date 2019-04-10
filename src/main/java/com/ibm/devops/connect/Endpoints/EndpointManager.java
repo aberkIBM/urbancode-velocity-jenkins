@@ -20,6 +20,10 @@ public class EndpointManager {
         return endpointProvider.getQualityDataEndpoint();
     }
 
+    public String getQualityDataRawEndpoint() {
+        return endpointProvider.getQualityDataRawEndpoint();
+    }
+
     public String getSyncApiEndpoint(String baseUrl) {
         return endpointProvider.getSyncApiEndpoint(baseUrl);
     }
