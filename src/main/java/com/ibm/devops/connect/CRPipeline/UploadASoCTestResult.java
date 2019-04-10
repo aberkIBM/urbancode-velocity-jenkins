@@ -109,7 +109,7 @@ public class UploadASoCTestResult extends Builder implements SimpleBuildStep {
 
         // Job parentJob = (Job)build.getParent();
         // Run firstBuild = parentJob.getBuildByNumber(1);
-        List<Action> actions = buil.getActions();
+        List<Action> actions = build.getActions();
 
         for(Action action : actions) {
             if(action.getClass().getName().equals("com.ibm.appscan.jenkins.plugin.actions.ScanResults")) {
