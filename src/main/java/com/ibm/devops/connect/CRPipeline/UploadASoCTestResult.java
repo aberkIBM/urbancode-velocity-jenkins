@@ -21,6 +21,7 @@ import hudson.tasks.Builder;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.model.Job;
 import hudson.model.Build;
+import hudson.EnvVars;
 
 import java.lang.reflect.Method;
 import hudson.model.Action;
@@ -47,7 +48,6 @@ import com.ibm.devops.connect.CloudPublisher;
 
 public class UploadASoCTestResult extends Builder implements SimpleBuildStep {
 
-    private Map<String, String> properties;
     private String tenantId;
     private String environment;
     private String appId;
@@ -70,7 +70,6 @@ public class UploadASoCTestResult extends Builder implements SimpleBuildStep {
         String recordName,
         String commitId
     ) {
-        this.properties = properties;
         this.tenantId = tenantId;
         this.environment = environment;
         this.appId = appId;
@@ -80,10 +79,6 @@ public class UploadASoCTestResult extends Builder implements SimpleBuildStep {
         this.metricDefinition = metricDefinition;
         this.recordName = recordName;
         this.commitId = commitId;
-    }
-
-    public Map<String, String> getProperties() {
-        return this.properties;
     }
 
     public String getTenantId() { return tenantId; }
@@ -100,18 +95,23 @@ public class UploadASoCTestResult extends Builder implements SimpleBuildStep {
     public void perform(final Run<?, ?> build, FilePath workspace, Launcher launcher, final TaskListener listener)
             throws AbortException, InterruptedException, IOException {
 
-        Job parentJob = (Job)build.getParent();
+        EnvVars envVars = build.getEnvironment(listener);
+        // Resolving all passed ${VARIABLES}
+        String tenantIdValue = envVars.expand(this.tenantId);
+        String environmentValue = envVars.expand(this.environment);
+        String appIdValue = envVars.expand(this.appId);
+        String appExtIdValue = envVars.expand(this.appExtId);
+        String appNameValue = envVars.expand(this.appName);
+        String buildUrlValue = envVars.expand(this.buildUrl);
+        String metricDefinitionValue = envVars.expand(this.metricDefinition);
+        String recordNameValue = envVars.expand(this.recordName);
+        String commitIdValue = envVars.expand(this.commitId);
 
-        Run firstBuild = parentJob.getBuildByNumber(1);
-
-        // Object fatalFailure = this.properties.get("fatal");
-
-        List<Action> actions = firstBuild.getActions();
+        // Job parentJob = (Job)build.getParent();
+        // Run firstBuild = parentJob.getBuildByNumber(1);
+        List<Action> actions = buil.getActions();
 
         for(Action action : actions) {
-            listener.getLogger().println("Action ----> " + action.getClass().getName());
-            listener.getLogger().println("Action ----> " + action.getClass());
-
             if(action.getClass().getName().equals("com.ibm.appscan.jenkins.plugin.actions.ScanResults")) {
                 listener.getLogger().println("We have found the Scan Results from AppScan");
 
@@ -146,40 +146,39 @@ public class UploadASoCTestResult extends Builder implements SimpleBuildStep {
                     JSONObject value = new JSONObject();
                     JSONObject buildObj = new JSONObject();
 
-                    buildObj.put("url", this.buildUrl);
+                    buildObj.put("url", buildUrlValue);
 
-                    application.put("id", this.appId);
-                    application.put("name", this.appName);
-                    application.put("externalId", this.appExtId);
+                    application.put("id", appIdValue);
+                    application.put("name", appNameValue);
+                    application.put("externalId", appExtIdValue);
 
                     value.put("High", highFindings);
                     value.put("Medium", mediumFindings);
                     value.put("Low", lowFindings);
                     value.put("Info", infoFindings);
 
-                    record.put("metricDefinitionId", this.metricDefinition);
+                    record.put("metricDefinitionId", metricDefinitionValue);
                     record.put("dataFormat", "json");
-                    record.put("recordName", this.recordName);
+                    record.put("recordName", recordNameValue);
                     record.put("pluginType", "templatePlugin");
                     record.put("value", value);
 
                     payload.put("dataSet", "AppScan on Cloud Scan Results");
-                    payload.put("environment", this.environment);
-                    payload.put("tenantId", this.tenantId);
+                    payload.put("environment", environmentValue);
+                    payload.put("tenantId", tenantIdValue);
                     payload.put("record", record);
                     payload.put("application", application);
                     payload.put("build", buildObj);
 
-
+                    listener.getLogger().println("Payload Doc To Upload: " + payload.toString());
                     listener.getLogger().println("Uploading Payload Doc");
                     try {
                         CloudPublisher.uploadQualityDataRaw(payload.toString());
+                        listener.getLogger().println("Upload Complete");
                     } catch (Exception ex) {
-                        listener.error("Error uploading metric data: " + ex.getClass() + " - " + ex.getMessage());
+                        listener.error("Error uploading ASoC data: " + ex.getClass() + " - " + ex.getMessage());
                         build.setResult(Result.FAILURE);
                     }
-
-                    listener.getLogger().println("UPLOADED PAYLOAD: " + payload.toString());
 
                 } catch (NoSuchMethodException e1) {
                     listener.getLogger().println("Could not find method on the ScanResult Object.  Is this running the proper version of AppScan on Cloud plugin?");

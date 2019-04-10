@@ -318,7 +318,7 @@ public class CloudPublisher  {
 
     public static void uploadQualityDataRaw(String payload) throws Exception {
         CloudPublisher.ensureHttpClientInitialized();
-        String localLogPrefix= logPrefix + "uploadDeployment ";
+        String localLogPrefix= logPrefix + "uploadMetricDataRaw ";
         String resStr = "";
         String url = CloudPublisher.getQualityDataRawUrl();
         CloseableHttpResponse response = null;
@@ -333,16 +333,16 @@ public class CloudPublisher  {
             response = httpClient.execute(postMethod);
             resStr = EntityUtils.toString(response.getEntity());
             if (response.getStatusLine().toString().contains("200")) {
-                log.info(localLogPrefix + "Uploaded Deployment successfully");
+                log.info(localLogPrefix + "Uploaded Metric (raw) successfully");
             } else {
-                throw new Exception("Bad response code when uploading Deployment: " + response.getStatusLine() + " - " + resStr);
+                throw new Exception("Bad response code when uploading Metric (raw): " + response.getStatusLine() + " - " + resStr);
             }
         } finally {
             if (response != null) {
                 try {
                     response.close();
                 } catch (Exception e) {
-                    log.error("Could not close uploadDeployment response");
+                    log.error("Could not close uploadQualityDataRaw response");
                 }
             }
         }
