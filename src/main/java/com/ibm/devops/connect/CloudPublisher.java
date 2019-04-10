@@ -183,7 +183,7 @@ public class CloudPublisher  {
         CloudPublisher.postToSyncAPI(url, jobStatus.toString());
     }
 
-    public static void uploadBuild(String payload) throws Exception {
+    public static String uploadBuild(String payload) throws Exception {
         CloudPublisher.ensureHttpClientInitialized();
         String localLogPrefix= logPrefix + "uploadBuild ";
         String resStr = "";
@@ -213,9 +213,10 @@ public class CloudPublisher  {
                 }
             }
         }
+        return resStr;
     }
 
-    public static void uploadDeployment(String payload) throws Exception {
+    public static String uploadDeployment(String payload) throws Exception {
         CloudPublisher.ensureHttpClientInitialized();
         String localLogPrefix= logPrefix + "uploadDeployment ";
         String resStr = "";
@@ -245,6 +246,7 @@ public class CloudPublisher  {
                 }
             }
         }
+        return resStr;
     }
 
     public static String checkGate(String pipelineId, String stageName, String versionId) throws Exception {
@@ -253,14 +255,15 @@ public class CloudPublisher  {
         String resStr = "";
         String url = CloudPublisher.getDotsUrl();
         CloseableHttpResponse response = null;
-        String result = "";
 
         try {
             URIBuilder builder = new URIBuilder(url);
             builder.setParameter("pipelineId", pipelineId);
             builder.setParameter("stageName", stageName);
             builder.setParameter("versionId", versionId);
-            HttpGet getMethod = new HttpGet(builder.build());
+            URI uri = builder.build();
+            System.out.println("TEST gates url: " + uri.toString());
+            HttpGet getMethod = new HttpGet(uri);
             attachHeaders(getMethod);
             getMethod.setHeader("Accept", "application/json");
             getMethod.setHeader("Authorization", "Bearer " + Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getApiToken());
@@ -269,7 +272,6 @@ public class CloudPublisher  {
             resStr = EntityUtils.toString(response.getEntity());
             if (response.getStatusLine().toString().contains("200")) {
                 log.info(localLogPrefix + "Gates Checked Successfully");
-                result = resStr;
             } else {
                 throw new Exception("Bad response code when uploading Deployment: " + response.getStatusLine() + " - " + resStr);
             }
@@ -282,7 +284,7 @@ public class CloudPublisher  {
                 }
             }
         }
-        return result;
+        return resStr;
     }
 
     public static boolean uploadQualityData(HttpEntity entity) throws Exception {

@@ -40,6 +40,7 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
 
     private String tenantId;
     private String id;
+    private String name;
     private String revision;
     private String requestor;
     private STATUS status;
@@ -53,6 +54,7 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
     public UploadBuild(
         String tenantId,
         String id,
+        String name,
         String revision,
         String requestor,
         STATUS status,
@@ -64,6 +66,7 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
     ) {
         this.tenantId = tenantId;
         this.id = id;
+        this.name = name;
         this.revision = revision;
         this.requestor = requestor;
         this.status = status;
@@ -76,6 +79,10 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
 
     public String getId() {
         return this.id;
+    }
+
+    public String getName() {
+        return this.name;
     }
 
     public String getTenantId() {
@@ -167,15 +174,25 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
         } else {
             payload.put("id", build.getParent().getName() + " - " + build.getId());
         }
+        if (this.name != null) {
+            payload.put("name", this.name);
+        } else {
+            payload.put("name", build.getDisplayName());
+        }
 
         // build-derived inputs
-        payload.put("name", build.getDisplayName());
         payload.put("url", Jenkins.getInstance().getRootUrl() + build.getUrl());
 
         System.out.println("TEST payload: " + payload.toString(2));
 
+        listener.getLogger().println("Uploading build \"" + payload.get("name") + "\" to UrbanCode Velocity...");
         try {
-            CloudPublisher.uploadBuild(payload.toString());
+            String response = CloudPublisher.uploadBuild(payload.toString());
+            JSONObject json = JSONObject.fromObject(response);
+            if (json.isEmpty() || !json.has("_id") || json.get("_id").equals("")) {
+                throw new RuntimeException("Did not receive successful response: " + response);
+            }
+            listener.getLogger().println("Successfully uploaded build to UrbanCode Velocity.");
         } catch (Exception ex) {
             listener.error("Error uploading build data: " + ex.getClass() + " - " + ex.getMessage());
             build.setResult(Result.FAILURE);

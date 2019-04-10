@@ -156,13 +156,14 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
 
         boolean success = workspace.act(new FileUploader(this, listener, Jenkins.getInstance().getRootUrl() + build.getUrl()));
 
-
         if (!success) {
             if (this.fatal != null && this.fatal.toString().equals("true")) {
                 build.setResult(Result.FAILURE);
             } else {
                 build.setResult(Result.UNSTABLE);
             }
+        } else {
+            listener.getLogger().println("Successfully uploaded metric file to UrbanCode Velocity.");
         }
     }
 
@@ -213,7 +214,6 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
         }
 
         @Override public Boolean invoke(File f, VirtualChannel channel) {
-            listener.getLogger().println("Uploading Metrics File");
 
             JSONObject payload = new JSONObject();
             payload.put("metricName", instance.testSetName);
@@ -246,6 +246,7 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
 
             System.out.println("TEST payload: " + payload.toString(2));
 
+            listener.getLogger().println("Uploading metric \"" + instance.name + "\" to UrbanCode Velocity...");
             HttpEntity entity = MultipartEntityBuilder
                 .create()
                 .addTextBody("payload", payload.toString())
@@ -256,7 +257,7 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
             try {
                 success = CloudPublisher.uploadQualityData(entity);
             } catch (Exception ex) {
-                listener.error("Error uploading metrics file: " + ex.getClass() + " - " + ex.getMessage());
+                listener.error("Error uploading metric file: " + ex.getClass() + " - " + ex.getMessage());
             }
             return success;
         }

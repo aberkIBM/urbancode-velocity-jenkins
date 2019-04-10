@@ -211,8 +211,15 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
 
         System.out.println("TEST payload: " + payload.toString(2));
 
+        listener.getLogger().println("Uploading deployment \"" + payload.get("version_name") + "\" of \"" + payload.get("name") + "\" to UrbanCode Velocity...");
         try {
-            CloudPublisher.uploadDeployment(payload.toString());
+            String response = CloudPublisher.uploadDeployment(payload.toString());
+            System.out.println("TEST response: " + response);
+            JSONObject json = JSONObject.fromObject(response);
+            if (json.isEmpty() || !json.has("_id") || json.get("_id").equals("")) {
+                throw new RuntimeException("Did not receive successful response: " + response);
+            }
+            listener.getLogger().println("Successfully uploaded deployment to UrbanCode Velocity.");
         } catch (Exception ex) {
             listener.error("Error uploading deployment data: " + ex.getClass() + " - " + ex.getMessage());
             build.setResult(Result.FAILURE);

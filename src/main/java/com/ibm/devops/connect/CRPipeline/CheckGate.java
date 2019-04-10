@@ -61,25 +61,29 @@ public class CheckGate extends Builder implements SimpleBuildStep {
     public void perform(final Run<?, ?> build, FilePath workspace, Launcher launcher, final TaskListener listener)
             throws AbortException, InterruptedException, IOException {
 
+        listener.getLogger().println("Checking gate on stage \"" + this.stageName + "\" for version \"" + this.versionId + "\" in UrbanCode Velocity...");
         try {
             String result = CloudPublisher.checkGate(this.pipelineId, this.stageName, this.versionId);
             JSONObject resultObj = JSONObject.fromObject(result);
+            if (resultObj.has("errors")) {
+                throw new RuntimeException(resultObj.get("errors").toString());
+            }
             Iterator<?> keys = resultObj.keys();
-            Boolean anyGatePassed = false;
             Boolean anyGateFailed = false;
             while(keys.hasNext()) {
                 String key = keys.next().toString();
                 String value = resultObj.get(key).toString();
                 if (value.equals("true")) {
                     listener.getLogger().println("Gate \"" + key + "\" passed");
-                    anyGatePassed = true;
                 } else if (value.equals("false")) {
                     listener.getLogger().println("Gate \"" + key + "\" failed");
                     anyGateFailed = true;
                 }
             }
-            if (!anyGatePassed || anyGateFailed) {
+            if (anyGateFailed) {
                 build.setResult(Result.FAILURE);
+            } else {
+                listener.getLogger().println("No gate failures, gates pass.");
             }
         } catch (Exception ex) {
             listener.error("Error checking gate: " + ex.getClass() + " - " + ex.getMessage());
