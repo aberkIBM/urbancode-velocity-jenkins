@@ -137,7 +137,7 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
         payload.put("application", application);
 
         // user-provided inputs with fallbacks
-        if (this.requestor != null) {
+        if (this.requestor != null && !this.requestor.equals("")) {
             payload.put("requestor", this.requestor);
         } else {
             for (Cause cause : build.getCauses()) {
@@ -159,22 +159,22 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
             }
             payload.put("status", computedStatus);
         }
-        if (this.startTime != null) {
+        if (this.startTime != null && this.startTime != 0L) {
             payload.put("startTime", this.startTime);
         } else {
             payload.put("startTime", build.getStartTimeInMillis());
         }
-        if (this.endTime != null) {
+        if (this.endTime != null && this.endTime != 0L) {
             payload.put("endTime", this.endTime);
         } else {
             payload.put("endTime", System.currentTimeMillis());
         }
-        if (this.id != null) {
+        if (this.id != null && !this.id.equals("")) {
             payload.put("id", this.id);
         } else {
             payload.put("id", build.getParent().getName() + " - " + build.getId());
         }
-        if (this.name != null) {
+        if (this.name != null && !this.name.equals("")) {
             payload.put("name", this.name);
         } else {
             payload.put("name", build.getDisplayName());
@@ -225,7 +225,7 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
          */
         @Override
         public String getDisplayName() {
-            return "Upload build information to UrbanCode Velocity";
+            return "UCV - Upload Build to UrbanCode Velocity";
         }
 
         @Override

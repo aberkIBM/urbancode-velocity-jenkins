@@ -94,7 +94,7 @@ public class UploadJUnitTestResult extends Builder implements SimpleBuildStep {
          */
         @Override
         public String getDisplayName() {
-            return "Upload JUnit formatted results to UrbanCode Velocity";
+            return "UCV - Upload JUnit Results to UrbanCode Velocity";
         }
 
         @Override

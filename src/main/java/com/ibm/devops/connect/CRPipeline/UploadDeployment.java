@@ -8,6 +8,7 @@
 package com.ibm.devops.connect.CRPipeline;
 
 import hudson.AbortException;
+import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -89,94 +90,82 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
         this.appExtId = appExtId;
     }
 
-    public String getTenantId() {
-        return this.tenantId;
-    }
-
-    public String getName() {
-        return this.name;
-    }
-
-    public STATUS getStatus() {
-        return this.status;
-    }
-
-    public String getInitiator() {
-        return this.initiator;
-    }
-
-    public String getVersionName() {
-        return this.versionName;
-    }
-
-    public String getVersionExtId() {
-        return this.versionExtId;
-    }
-
-    public String getType() {
-        return this.type;
-    }
-
-    public String getEnvironmentId() {
-        return this.environmentId;
-    }
-
-    public String getEnvironmentName() {
-        return this.environmentName;
-    }
-
-    public String getDescription() {
-        return this.description;
-    }
-
-    public Long getStartTime() {
-        return this.startTime;
-    }
-
-    public Long getEndTime() {
-        return this.endTime;
-    }
-
-    public String getAppName() {
-        return this.appName;
-    }
-
-    public String getAppId() {
-        return this.appId;
-    }
-
-    public String getAppExtId() {
-        return this.appExtId;
-    }
+    public String getTenantId() { return this.tenantId; }
+    public String getName() { return this.name; }
+    public STATUS getStatus() { return this.status; }
+    public String getInitiator() { return this.initiator; }
+    public String getVersionName() { return this.versionName; }
+    public String getVersionExtId() { return this.versionExtId; }
+    public String getType() { return this.type; }
+    public String getEnvironmentId() { return this.environmentId; }
+    public String getEnvironmentName() { return this.environmentName; }
+    public String getDescription() { return this.description; }
+    public Long getStartTime() { return this.startTime; }
+    public Long getEndTime() { return this.endTime; }
+    public String getAppName() { return this.appName; }
+    public String getAppId() { return this.appId; }
+    public String getAppExtId() { return this.appExtId; }
 
     @Override
     public void perform(final Run<?, ?> build, FilePath workspace, Launcher launcher, final TaskListener listener)
             throws AbortException, InterruptedException, IOException {
 
+        EnvVars envVars = build.getEnvironment(listener);
+        String tenantId = envVars.expand(this.tenantId);
+        String versionName = envVars.expand(this.versionName);
+        String versionExtId = envVars.expand(this.versionExtId);
+        String type = envVars.expand(this.type);
+        String environmentId = envVars.expand(this.environmentId);
+        String environmentName = envVars.expand(this.environmentName);
+        String description = envVars.expand(this.description);
+        String appId = envVars.expand(this.appId);
+        String appName = envVars.expand(this.appName);
+        String appExtId = envVars.expand(this.appExtId);
+        String name = envVars.expand(this.name);
+        String initiator = envVars.expand(this.initiator);
+        String status = envVars.expand(this.status.toString());
+        String startTime = envVars.expand(this.startTime.toString());
+        String endTime = envVars.expand(this.endTime.toString());
+
         JSONObject payload = new JSONObject();
 
         // user-provided inputs
-        payload.put("tenant_id", this.tenantId);
-        payload.put("version_name", this.versionName);
-        payload.put("version_id_external", this.versionExtId);
-        payload.put("type", this.type);
-        payload.put("environment_id", this.environmentId);
-        payload.put("environment_name", this.environmentName);
-        payload.put("description", this.description);
+        payload.put("tenant_id", envVars.expand(tenantId));
+        if (versionName != null && !versionName.equals("")) {
+            payload.put("version_name", versionName);
+        }
+        if (versionExtId != null && !versionExtId.equals("")) {
+            payload.put("version_id_external", versionExtId);
+        }
+        payload.put("type", type);
+        payload.put("environment_id", environmentId);
+        payload.put("environment_name", environmentName);
+        if (description != null && !description.equals("")) {
+            payload.put("description", description);
+        }
         JSONObject application = new JSONObject();
-        application.put("id", this.appId);
-        application.put("name", this.appName);
-        application.put("externalId", this.appExtId);
+        if (appId != null && !appId.equals("")) {
+            application.put("id", appId);
+        }
+        if (appName != null && !appName.equals("")) {
+            application.put("name", appName);
+        }
+        if (appExtId != null && !appExtId.equals("")) {
+            application.put("externalId", appExtId);
+        }
+        if (application.isEmpty()) {
+            throw new RuntimeException("Must specify at least one of: 'appId', 'appName', 'appExtId'");
+        }
         payload.put("application", application);
 
         // user-provided inputs with fallbacks
-        if (this.name != null) {
-            payload.put("name", this.name);
+        if (name != null && !name.equals("")) {
+            payload.put("name", name);
         } else {
             payload.put("name", build.getParent().getName());
         }
-        if (this.initiator != null) {
-            payload.put("by_user", this.initiator);
+        if (initiator != null && !initiator.equals("")) {
+            payload.put("by_user", initiator);
         } else {
             for (Cause cause : build.getCauses()) {
                 if (cause instanceof UserIdCause) {
@@ -188,8 +177,8 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
                 }
             }
         }
-        if (this.status != null) {
-            payload.put("result", this.status.equals(STATUS.SUCCESS) ? "Success" : "Failed");
+        if (status != null) {
+            payload.put("result", status.equals(STATUS.SUCCESS.toString()) ? "Success" : "Failed");
         } else {
             String computedStatus = "Failed";
             if (build.getResult() == null || build.getResult().equals(Result.SUCCESS)) {
@@ -197,13 +186,13 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
             }
             payload.put("result", computedStatus);
         }
-        if (this.startTime != null) {
-            payload.put("start_time", this.startTime);
+        if (startTime != null && !startTime.equals("0")) {
+            payload.put("start_time", Long.valueOf(startTime));
         } else {
             payload.put("start_time", build.getStartTimeInMillis());
         }
-        if (this.endTime != null) {
-            payload.put("end_time", this.endTime);
+        if (endTime != null && !endTime.equals("0")) {
+            payload.put("end_time", Long.valueOf(endTime));
         } else {
             payload.put("end_time", System.currentTimeMillis());
         }
@@ -252,7 +241,7 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
          */
         @Override
         public String getDisplayName() {
-            return "Upload deployment information to UrbanCode Velocity";
+            return "UCV - Upload Deployment to UrbanCode Velocity";
         }
 
         @Override

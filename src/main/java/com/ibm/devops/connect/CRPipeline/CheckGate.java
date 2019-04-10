@@ -117,7 +117,7 @@ public class CheckGate extends Builder implements SimpleBuildStep {
          */
         @Override
         public String getDisplayName() {
-            return "Check a gate in UrbanCode Velocity";
+            return "UCV- Check Gate in UrbanCode Velocity";
         }
 
         @Override
