@@ -14,6 +14,7 @@ import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.AbstractProject;
 import hudson.model.Cause;
+import hudson.model.Cause.RemoteCause;
 import hudson.model.Cause.UpstreamCause;
 import hudson.model.Cause.UserIdCause;
 import hudson.model.Result;
@@ -21,7 +22,6 @@ import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.tasks.Builder;
 import hudson.tasks.BuildStepDescriptor;
-import jenkins.model.Jenkins;
 import jenkins.tasks.SimpleBuildStep;
 
 import java.io.IOException;
@@ -111,6 +111,7 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
             throws AbortException, InterruptedException, IOException {
 
         EnvVars envVars = build.getEnvironment(listener);
+
         String tenantId = envVars.expand(this.tenantId);
         String versionName = envVars.expand(this.versionName);
         String versionExtId = envVars.expand(this.versionExtId);
@@ -123,9 +124,9 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
         String appExtId = envVars.expand(this.appExtId);
         String name = envVars.expand(this.name);
         String initiator = envVars.expand(this.initiator);
-        String status = envVars.expand(this.status.toString());
-        String startTime = envVars.expand(this.startTime.toString());
-        String endTime = envVars.expand(this.endTime.toString());
+        String status = envVars.expand(this.status == null ? "" : this.status.toString());
+        String startTime = envVars.expand(this.startTime == null ? "0" : this.startTime.toString());
+        String endTime = envVars.expand(this.endTime == null ? "0" : this.endTime.toString());
 
         JSONObject payload = new JSONObject();
 
@@ -174,10 +175,15 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
                 } else if (cause instanceof UpstreamCause) {
                     UpstreamCause upstreamCause = (UpstreamCause)cause;
                     payload.put("by_user", "Upstream job \"" + upstreamCause.getUpstreamProject() + "\", build \"" + upstreamCause.getUpstreamBuild() + "\"");
+                } else if (cause instanceof RemoteCause) {
+                    RemoteCause remoteCause = (RemoteCause)cause;
+                    payload.put("requestor", remoteCause.getAddr());
+                } else {
+                    payload.put("requestor", cause.getShortDescription());
                 }
             }
         }
-        if (status != null) {
+        if (status != null && !status.equals("")) {
             payload.put("result", status.equals(STATUS.SUCCESS.toString()) ? "Success" : "Failed");
         } else {
             String computedStatus = "Failed";

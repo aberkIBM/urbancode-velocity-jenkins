@@ -8,6 +8,7 @@
 package com.ibm.devops.connect.CRPipeline;
 
 import hudson.AbortException;
+import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -45,25 +46,23 @@ public class CheckGate extends Builder implements SimpleBuildStep {
         this.versionId = versionId;
     }
 
-    public String getPipelineId() {
-        return this.pipelineId;
-    }
-
-    public String getStageName() {
-        return this.stageName;
-    }
-
-    public String getVersionId() {
-        return this.versionId;
-    }
+    public String getPipelineId() { return this.pipelineId; }
+    public String getStageName() { return this.stageName; }
+    public String getVersionId() { return this.versionId; }
 
     @Override
     public void perform(final Run<?, ?> build, FilePath workspace, Launcher launcher, final TaskListener listener)
             throws AbortException, InterruptedException, IOException {
 
-        listener.getLogger().println("Checking gate on stage \"" + this.stageName + "\" for version \"" + this.versionId + "\" in UrbanCode Velocity...");
+        EnvVars envVars = build.getEnvironment(listener);
+
+        String pipelineId = envVars.expand(this.pipelineId);
+        String stageName = envVars.expand(this.stageName);
+        String versionId = envVars.expand(this.versionId);
+
+        listener.getLogger().println("Checking gate on stage \"" + stageName + "\" for version \"" + versionId + "\" in UrbanCode Velocity...");
         try {
-            String result = CloudPublisher.checkGate(this.pipelineId, this.stageName, this.versionId);
+            String result = CloudPublisher.checkGate(pipelineId, stageName, versionId);
             JSONObject resultObj = JSONObject.fromObject(result);
             if (resultObj.has("errors")) {
                 throw new RuntimeException(resultObj.get("errors").toString());

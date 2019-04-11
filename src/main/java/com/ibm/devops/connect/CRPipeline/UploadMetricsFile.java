@@ -175,6 +175,7 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
         @Override public Boolean invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
 
             EnvVars envVars = build.getEnvironment(listener);
+
             String testSetName = envVars.expand(instance.testSetName);
             String filePath = envVars.expand(instance.filePath);
             String environment = envVars.expand(instance.environment);
@@ -186,10 +187,11 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
             String dataFormat = envVars.expand(instance.dataFormat);
             String name = envVars.expand(instance.name);
             String metricDefinitionId = envVars.expand(instance.metricDefinitionId);
-            String combineTestSuites = envVars.expand(instance.combineTestSuites.toString());
+            String combineTestSuites = envVars.expand(instance.combineTestSuites == null ? "" : instance.combineTestSuites.toString());
             String buildId = envVars.expand(instance.buildId);
 
             JSONObject payload = new JSONObject();
+
             payload.put("dataSet", testSetName);
             if (environment != null && !environment.equals("")) {
                 payload.put("environment", environment);
@@ -223,7 +225,7 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
             payload.put("record", record);
 
             JSONObject options = new JSONObject();
-            options.put("combineTestSuites", combineTestSuites != null ? combineTestSuites.toString() : "true");
+            options.put("combineTestSuites", combineTestSuites != null && !combineTestSuites.equals("") ? combineTestSuites.toString() : "true");
             payload.put("options", options);
 
             JSONObject build = new JSONObject();

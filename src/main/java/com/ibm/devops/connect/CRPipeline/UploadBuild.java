@@ -8,11 +8,13 @@
 package com.ibm.devops.connect.CRPipeline;
 
 import hudson.AbortException;
+import hudson.EnvVars;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.AbstractProject;
 import hudson.model.Cause;
+import hudson.model.Cause.RemoteCause;
 import hudson.model.Cause.UpstreamCause;
 import hudson.model.Cause.UserIdCause;
 import hudson.model.Result;
@@ -77,68 +79,59 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
         this.appExtId = appExtId;
     }
 
-    public String getId() {
-        return this.id;
-    }
-
-    public String getName() {
-        return this.name;
-    }
-
-    public String getTenantId() {
-        return this.tenantId;
-    }
-
-    public String getRevision() {
-        return this.revision;
-    }
-
-    public String getRequestor() {
-        return this.requestor;
-    }
-
-    public STATUS getStatus() {
-        return this.status;
-    }
-
-    public Long getStartTime() {
-        return this.startTime;
-    }
-
-    public Long getEndTime() {
-        return this.endTime;
-    }
-
-    public String getAppName() {
-        return this.appName;
-    }
-
-    public String getAppId() {
-        return this.appId;
-    }
-
-    public String getAppExtId() {
-        return this.appExtId;
-    }
+    public String getId() { return this.id; }
+    public String getName() {return this.name; }
+    public String getTenantId() { return this.tenantId; }
+    public String getRevision() { return this.revision; }
+    public String getRequestor() { return this.requestor; }
+    public STATUS getStatus() { return this.status; }
+    public Long getStartTime() { return this.startTime; }
+    public Long getEndTime() { return this.endTime; }
+    public String getAppName() { return this.appName; }
+    public String getAppId() { return this.appId; }
+    public String getAppExtId() { return this.appExtId; }
 
     @Override
     public void perform(final Run<?, ?> build, FilePath workspace, Launcher launcher, final TaskListener listener)
             throws AbortException, InterruptedException, IOException {
 
+        EnvVars envVars = build.getEnvironment(listener);
+
+        String id = envVars.expand(this.id);
+        String name = envVars.expand(this.name);
+        String tenantId = envVars.expand(this.tenantId);
+        String revision = envVars.expand(this.revision);
+        String requestor = envVars.expand(this.requestor);
+        String status = envVars.expand(this.status == null ? "" : this.status.toString());
+        String startTime = envVars.expand(this.startTime == null ? "0" : this.startTime.toString());
+        String endTime = envVars.expand(this.endTime == null ? "0" : this.endTime.toString());
+        String appName = envVars.expand(this.appName);
+        String appId = envVars.expand(this.appId);
+        String appExtId = envVars.expand(this.appExtId);
+
         JSONObject payload = new JSONObject();
 
         // user-provided inputs
-        payload.put("tenantId", this.tenantId);
-        payload.put("revision", this.revision);
+        payload.put("tenantId", tenantId);
+        payload.put("revision", revision);
         JSONObject application = new JSONObject();
-        application.put("id", this.appId);
-        application.put("name", this.appName);
-        application.put("externalId", this.appExtId);
+        if (appId != null && !appId.equals("")) {
+            application.put("id", appId);
+        }
+        if (appName != null && !appName.equals("")) {
+            application.put("name", appName);
+        }
+        if (appExtId != null && !appExtId.equals("")) {
+            application.put("externalId", appExtId);
+        }
+        if (application.isEmpty()) {
+            throw new RuntimeException("Must specify at least one of: 'appId', 'appName', 'appExtId'");
+        }
         payload.put("application", application);
 
         // user-provided inputs with fallbacks
-        if (this.requestor != null && !this.requestor.equals("")) {
-            payload.put("requestor", this.requestor);
+        if (requestor != null && !requestor.equals("")) {
+            payload.put("requestor", requestor);
         } else {
             for (Cause cause : build.getCauses()) {
                 if (cause instanceof UserIdCause) {
@@ -147,11 +140,16 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
                 } else if (cause instanceof UpstreamCause) {
                     UpstreamCause upstreamCause = (UpstreamCause)cause;
                     payload.put("requestor", "Upstream job \"" + upstreamCause.getUpstreamProject() + "\", build \"" + upstreamCause.getUpstreamBuild() + "\"");
+                } else if (cause instanceof RemoteCause) {
+                    RemoteCause remoteCause = (RemoteCause)cause;
+                    payload.put("requestor", remoteCause.getAddr());
+                } else {
+                    payload.put("requestor", cause.getShortDescription());
                 }
             }
         }
-        if (this.status != null) {
-          payload.put("status", this.status.equals(STATUS.SUCCESS) ? "success" : "failure");
+        if (status != null && !status.equals("")) {
+          payload.put("status", status.equals(STATUS.SUCCESS.toString()) ? "success" : "failure");
         } else {
             String computedStatus = "failure";
             if (build.getResult() == null || build.getResult().equals(Result.SUCCESS)) {
@@ -159,23 +157,23 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
             }
             payload.put("status", computedStatus);
         }
-        if (this.startTime != null && this.startTime != 0L) {
-            payload.put("startTime", this.startTime);
+        if (startTime != null && !startTime.equals("0")) {
+            payload.put("startTime", startTime);
         } else {
             payload.put("startTime", build.getStartTimeInMillis());
         }
-        if (this.endTime != null && this.endTime != 0L) {
-            payload.put("endTime", this.endTime);
+        if (endTime != null && !endTime.equals("0")) {
+            payload.put("endTime", endTime);
         } else {
             payload.put("endTime", System.currentTimeMillis());
         }
-        if (this.id != null && !this.id.equals("")) {
-            payload.put("id", this.id);
+        if (id != null && !id.equals("")) {
+            payload.put("id", id);
         } else {
             payload.put("id", build.getParent().getName() + " - " + build.getId());
         }
-        if (this.name != null && !this.name.equals("")) {
-            payload.put("name", this.name);
+        if (name != null && !name.equals("")) {
+            payload.put("name", name);
         } else {
             payload.put("name", build.getDisplayName());
         }
@@ -185,7 +183,7 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
 
         System.out.println("TEST payload: " + payload.toString(2));
 
-        listener.getLogger().println("Uploading build \"" + payload.get("name") + "\" to UrbanCode Velocity...");
+        listener.getLogger().println("Uploading build \"" + payload.get("id") + "\" to UrbanCode Velocity...");
         try {
             String response = CloudPublisher.uploadBuild(payload.toString());
             JSONObject json = JSONObject.fromObject(response);
