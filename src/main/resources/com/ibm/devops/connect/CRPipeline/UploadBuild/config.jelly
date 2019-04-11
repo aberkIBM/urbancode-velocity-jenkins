@@ -2,25 +2,7 @@
     <f:entry title="Tenant Id" field="tenantId">
         <f:textbox />
     </f:entry>
-    <f:entry title="ID" field="id">
-        <f:textbox />
-    </f:entry>
-    <f:entry title="Name" field="name">
-        <f:textbox />
-    </f:entry>
     <f:entry title="Revision" field="revision">
-        <f:textbox />
-    </f:entry>
-    <f:entry title="Requestor" field="requestor">
-        <f:textbox />
-    </f:entry>
-    <f:entry title="Status" field="status">
-        <f:textbox />
-    </f:entry>
-    <f:entry title="Start Time" field="startTime">
-        <f:textbox />
-    </f:entry>
-    <f:entry title="End Time" field="endTime">
         <f:textbox />
     </f:entry>
     <f:entry title="App Id (one of three required)" field="appId">
@@ -32,4 +14,24 @@
     <f:entry title="App Name (one of three required)" field="appName">
         <f:textbox />
     </f:entry>
+    <f:advanced>
+        <f:entry title="ID" field="id">
+            <f:textbox />
+        </f:entry>
+        <f:entry title="Name" field="name">
+            <f:textbox />
+        </f:entry>
+        <f:entry title="Requestor" field="requestor">
+            <f:textbox />
+        </f:entry>
+        <f:entry title="Succeeded" field="succeeded">
+            <f:textbox />
+        </f:entry>
+        <f:entry title="Start Time" field="startTime">
+            <f:textbox />
+        </f:entry>
+        <f:entry title="End Time" field="endTime">
+            <f:textbox />
+        </f:entry>
+    </f:advanced>
 </j:jelly>

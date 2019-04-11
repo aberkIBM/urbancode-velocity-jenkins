@@ -2,21 +2,6 @@
     <f:entry title="Tenant Id" field="tenantId">
         <f:textbox />
     </f:entry>
-    <f:entry title="Name" field="name">
-        <f:textbox />
-    </f:entry>
-    <f:entry title="Status" field="status">
-        <f:textbox />
-    </f:entry>
-    <f:entry title="Initiator" field="initiator">
-        <f:textbox />
-    </f:entry>
-    <f:entry title="Version Name" field="versionName">
-        <f:textbox />
-    </f:entry>
-    <f:entry title="Version External ID" field="versionExtId">
-        <f:textbox />
-    </f:entry>
     <f:entry title="Type" field="type">
         <f:textbox />
     </f:entry>
@@ -24,15 +9,6 @@
         <f:textbox />
     </f:entry>
     <f:entry title="Environment Name" field="environmentName">
-        <f:textbox />
-    </f:entry>
-    <f:entry title="Description" field="description">
-        <f:textbox />
-    </f:entry>
-    <f:entry title="Start Time" field="startTime">
-        <f:textbox />
-    </f:entry>
-    <f:entry title="End Time" field="endTime">
         <f:textbox />
     </f:entry>
     <f:entry title="App Id (one of three required)" field="appId">
@@ -44,4 +20,30 @@
     <f:entry title="App Name (one of three required)" field="appName">
         <f:textbox />
     </f:entry>
+    <f:advanced>
+        <f:entry title="Version Name" field="versionName">
+            <f:textbox />
+        </f:entry>
+        <f:entry title="Version External ID" field="versionExtId">
+            <f:textbox />
+        </f:entry>
+        <f:entry title="Description" field="description">
+            <f:textbox />
+        </f:entry>
+        <f:entry title="Name" field="name">
+            <f:textbox />
+        </f:entry>
+        <f:entry title="Initiator" field="initiator">
+            <f:textbox />
+        </f:entry>
+        <f:entry title="Succeeded" field="succeeded">
+            <f:textbox />
+        </f:entry>
+        <f:entry title="Start Time" field="startTime">
+            <f:textbox />
+        </f:entry>
+        <f:entry title="End Time" field="endTime">
+            <f:textbox />
+        </f:entry>
+    </f:advanced>
 </j:jelly>

@@ -34,14 +34,9 @@ import com.ibm.devops.connect.CloudPublisher;
 
 public class UploadDeployment extends Builder implements SimpleBuildStep {
 
-    enum STATUS {
-        SUCCESS,
-        FAILURE
-    }
-
     private String tenantId;
     private String name;
-    private STATUS status;
+    private String succeeded;
     private String initiator;
     private String versionName;
     private String versionExtId;
@@ -49,8 +44,8 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
     private String environmentId;
     private String environmentName;
     private String description;
-    private Long startTime;
-    private Long endTime;
+    private String startTime;
+    private String endTime;
     private String appName;
     private String appId;
     private String appExtId;
@@ -59,7 +54,7 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
     public UploadDeployment(
         String tenantId,
         String name,
-        STATUS status,
+        String succeeded,
         String initiator,
         String versionName,
         String versionExtId,
@@ -67,15 +62,15 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
         String environmentId,
         String environmentName,
         String description,
-        Long startTime,
-        Long endTime,
+        String startTime,
+        String endTime,
         String appName,
         String appId,
         String appExtId
     ) {
         this.tenantId = tenantId;
         this.name = name;
-        this.status = status;
+        this.succeeded = succeeded;
         this.initiator = initiator;
         this.versionName = versionName;
         this.versionExtId = versionExtId;
@@ -92,7 +87,7 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
 
     public String getTenantId() { return this.tenantId; }
     public String getName() { return this.name; }
-    public STATUS getStatus() { return this.status; }
+    public String getSucceeded() { return this.succeeded; }
     public String getInitiator() { return this.initiator; }
     public String getVersionName() { return this.versionName; }
     public String getVersionExtId() { return this.versionExtId; }
@@ -100,8 +95,8 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
     public String getEnvironmentId() { return this.environmentId; }
     public String getEnvironmentName() { return this.environmentName; }
     public String getDescription() { return this.description; }
-    public Long getStartTime() { return this.startTime; }
-    public Long getEndTime() { return this.endTime; }
+    public String getStartTime() { return this.startTime; }
+    public String getEndTime() { return this.endTime; }
     public String getAppName() { return this.appName; }
     public String getAppId() { return this.appId; }
     public String getAppExtId() { return this.appExtId; }
@@ -124,9 +119,9 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
         String appExtId = envVars.expand(this.appExtId);
         String name = envVars.expand(this.name);
         String initiator = envVars.expand(this.initiator);
-        String status = envVars.expand(this.status == null ? "" : this.status.toString());
-        String startTime = envVars.expand(this.startTime == null ? "0" : this.startTime.toString());
-        String endTime = envVars.expand(this.endTime == null ? "0" : this.endTime.toString());
+        String succeeded = envVars.expand(this.succeeded);
+        String startTime = envVars.expand(this.startTime);
+        String endTime = envVars.expand(this.endTime);
 
         JSONObject payload = new JSONObject();
 
@@ -183,8 +178,8 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
                 }
             }
         }
-        if (status != null && !status.equals("")) {
-            payload.put("result", status.equals(STATUS.SUCCESS.toString()) ? "Success" : "Failed");
+        if (succeeded != null && !succeeded.equals("")) {
+            payload.put("result", succeeded.equals("true") ? "Success" : "Failed");
         } else {
             String computedStatus = "Failed";
             if (build.getResult() == null || build.getResult().equals(Result.SUCCESS)) {
@@ -192,12 +187,12 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
             }
             payload.put("result", computedStatus);
         }
-        if (startTime != null && !startTime.equals("0")) {
+        if (startTime != null && !startTime.equals("")) {
             payload.put("start_time", Long.valueOf(startTime));
         } else {
             payload.put("start_time", build.getStartTimeInMillis());
         }
-        if (endTime != null && !endTime.equals("0")) {
+        if (endTime != null && !endTime.equals("")) {
             payload.put("end_time", Long.valueOf(endTime));
         } else {
             payload.put("end_time", System.currentTimeMillis());

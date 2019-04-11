@@ -35,19 +35,14 @@ import com.ibm.devops.connect.CloudPublisher;
 
 public class UploadBuild extends Builder implements SimpleBuildStep {
 
-    enum STATUS {
-        SUCCESS,
-        FAILURE
-    }
-
     private String tenantId;
     private String id;
     private String name;
     private String revision;
     private String requestor;
-    private STATUS status;
-    private Long startTime;
-    private Long endTime;
+    private String succeeded;
+    private String startTime;
+    private String endTime;
     private String appName;
     private String appId;
     private String appExtId;
@@ -59,9 +54,9 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
         String name,
         String revision,
         String requestor,
-        STATUS status,
-        Long startTime,
-        Long endTime,
+        String succeeded,
+        String startTime,
+        String endTime,
         String appName,
         String appId,
         String appExtId
@@ -71,7 +66,7 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
         this.name = name;
         this.revision = revision;
         this.requestor = requestor;
-        this.status = status;
+        this.succeeded = succeeded;
         this.startTime = startTime;
         this.endTime = endTime;
         this.appName = appName;
@@ -84,9 +79,9 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
     public String getTenantId() { return this.tenantId; }
     public String getRevision() { return this.revision; }
     public String getRequestor() { return this.requestor; }
-    public STATUS getStatus() { return this.status; }
-    public Long getStartTime() { return this.startTime; }
-    public Long getEndTime() { return this.endTime; }
+    public String getSucceeded() { return this.succeeded; }
+    public String getStartTime() { return this.startTime; }
+    public String getEndTime() { return this.endTime; }
     public String getAppName() { return this.appName; }
     public String getAppId() { return this.appId; }
     public String getAppExtId() { return this.appExtId; }
@@ -102,9 +97,9 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
         String tenantId = envVars.expand(this.tenantId);
         String revision = envVars.expand(this.revision);
         String requestor = envVars.expand(this.requestor);
-        String status = envVars.expand(this.status == null ? "" : this.status.toString());
-        String startTime = envVars.expand(this.startTime == null ? "0" : this.startTime.toString());
-        String endTime = envVars.expand(this.endTime == null ? "0" : this.endTime.toString());
+        String succeeded = envVars.expand(this.succeeded);
+        String startTime = envVars.expand(this.startTime);
+        String endTime = envVars.expand(this.endTime);
         String appName = envVars.expand(this.appName);
         String appId = envVars.expand(this.appId);
         String appExtId = envVars.expand(this.appExtId);
@@ -148,8 +143,8 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
                 }
             }
         }
-        if (status != null && !status.equals("")) {
-          payload.put("status", status.equals(STATUS.SUCCESS.toString()) ? "success" : "failure");
+        if (succeeded != null && !succeeded.equals("")) {
+          payload.put("status", succeeded.equals("true") ? "success" : "failure");
         } else {
             String computedStatus = "failure";
             if (build.getResult() == null || build.getResult().equals(Result.SUCCESS)) {
@@ -157,13 +152,13 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
             }
             payload.put("status", computedStatus);
         }
-        if (startTime != null && !startTime.equals("0")) {
-            payload.put("startTime", startTime);
+        if (startTime != null && !startTime.equals("")) {
+            payload.put("startTime", Long.valueOf(startTime));
         } else {
             payload.put("startTime", build.getStartTimeInMillis());
         }
-        if (endTime != null && !endTime.equals("0")) {
-            payload.put("endTime", endTime);
+        if (endTime != null && !endTime.equals("")) {
+            payload.put("endTime", Long.valueOf(endTime));
         } else {
             payload.put("endTime", System.currentTimeMillis());
         }
