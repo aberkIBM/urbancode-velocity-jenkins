@@ -4,6 +4,8 @@ public interface IEndpoints {
 
     public String getSyncApiEndpoint();
 
+    public String getPipelinesEndpoint();
+
     public String getSyncApiEndpoint(String baseUrl);
 
     public String getSyncStoreEndpoint();

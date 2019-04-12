@@ -28,6 +28,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
 import com.ibm.devops.connect.CloudPublisher;
+import com.ibm.devops.connect.Endpoints.EndpointManager;
 
 public class CheckGate extends Builder implements SimpleBuildStep {
 
@@ -50,6 +51,11 @@ public class CheckGate extends Builder implements SimpleBuildStep {
     public String getStageName() { return this.stageName; }
     public String getVersionId() { return this.versionId; }
 
+    private static String getPipelinesUrl() {
+        EndpointManager em = new EndpointManager();
+        return em.getPipelinesEndpoint();
+    }
+
     @Override
     public void perform(final Run<?, ?> build, FilePath workspace, Launcher launcher, final TaskListener listener)
             throws AbortException, InterruptedException, IOException {
@@ -60,6 +66,7 @@ public class CheckGate extends Builder implements SimpleBuildStep {
         String stageName = envVars.expand(this.stageName);
         String versionId = envVars.expand(this.versionId);
 
+        listener.getLogger().println("Check gates on pipeline: " + CheckGate.getPipelinesUrl() + pipelineId);
         listener.getLogger().println("Checking gate on stage \"" + stageName + "\" for version \"" + versionId + "\" in UrbanCode Velocity...");
         try {
             String result = CloudPublisher.checkGate(pipelineId, stageName, versionId);
@@ -116,7 +123,7 @@ public class CheckGate extends Builder implements SimpleBuildStep {
          */
         @Override
         public String getDisplayName() {
-            return "UCV- Check Gate in UrbanCode Velocity";
+            return "UCV - Check Gate in UrbanCode Velocity";
         }
 
         @Override

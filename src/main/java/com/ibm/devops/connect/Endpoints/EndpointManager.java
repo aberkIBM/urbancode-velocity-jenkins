@@ -16,6 +16,10 @@ public class EndpointManager {
         return endpointProvider.getSyncApiEndpoint();
     }
 
+    public String getPipelinesEndpoint() {
+        return endpointProvider.getPipelinesEndpoint();
+    }
+
     public String getQualityDataEndpoint() {
         return endpointProvider.getQualityDataEndpoint();
     }

@@ -58,7 +58,7 @@ public class UploadJUnitTestResult extends Builder implements SimpleBuildStep {
 
         Object fatalFailure = this.properties.get("fatal");
 
-        boolean success = workspace.act(new FileUploader(this.properties, listener, Jenkins.getInstance().getRootUrl() + build.getUrl()));
+        boolean success = workspace.act(new FileUploader(this.properties, listener, Jenkins.getInstance().getRootUrl() + build.getUrl(), CloudPublisher.getQualityDataUrl()));
         if (!success) {
             if (fatalFailure != null && fatalFailure.toString().equals("true")) {
                 build.setResult(Result.FAILURE);
@@ -107,11 +107,13 @@ public class UploadJUnitTestResult extends Builder implements SimpleBuildStep {
         private Map<String, String> properties;
         private TaskListener listener;
         private String buildUrl;
+        private String postUrl;
 
-        public FileUploader(Map<String, String> properties, TaskListener listener, String buildUrl) {
+        public FileUploader(Map<String, String> properties, TaskListener listener, String buildUrl, String postUrl) {
             this.properties = properties;
             this.listener = listener;
             this.buildUrl = buildUrl;
+            this.postUrl = postUrl;
         }
 
         @Override public Boolean invoke(File f, VirtualChannel channel) {
@@ -162,7 +164,7 @@ public class UploadJUnitTestResult extends Builder implements SimpleBuildStep {
             build.put("url", this.buildUrl);
             payload.put("build", build);
 
-System.out.println("TEST payload: " + payload.toString(2));
+            System.out.println("TEST payload: " + payload.toString(2));
 
             HttpEntity entity = MultipartEntityBuilder
                 .create()
@@ -172,7 +174,7 @@ System.out.println("TEST payload: " + payload.toString(2));
 
             boolean success = false;
             try {
-                success = CloudPublisher.uploadQualityData(entity);
+                success = CloudPublisher.uploadQualityData(entity, postUrl);
             } catch (Exception ex) {
                 listener.error("Error uploading quality data: " + ex.getClass() + " - " + ex.getMessage());
             }

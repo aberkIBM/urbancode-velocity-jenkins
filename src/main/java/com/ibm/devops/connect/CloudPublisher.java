@@ -137,7 +137,7 @@ public class CloudPublisher  {
         return em.getSyncApiEndpoint(baseUrl);
     }
 
-    private static String getQualityDataUrl() {
+    public static String getQualityDataUrl() {
         EndpointManager em = new EndpointManager();
         return em.getQualityDataEndpoint();
     }
@@ -287,16 +287,14 @@ public class CloudPublisher  {
         return resStr;
     }
 
-    public static boolean uploadQualityData(HttpEntity entity) throws Exception {
+    public static boolean uploadQualityData(HttpEntity entity, String url) throws Exception {
         CloudPublisher.ensureHttpClientInitialized();
         String localLogPrefix= logPrefix + "uploadQualityData ";
         String resStr = "";
-        String url = CloudPublisher.getQualityDataUrl();
         CloseableHttpResponse response = null;
 
         try {
             HttpPost postMethod = new HttpPost(url);
-            attachHeaders(postMethod);
             postMethod.setEntity(entity);
 
             response = httpClient.execute(postMethod);

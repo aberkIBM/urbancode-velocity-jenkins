@@ -19,6 +19,7 @@ public class EndpointsVelocity implements IEndpoints {
     private static final String QUALITY_DATA_RAW_PATH = "/api/v1/metrics";
     private static final String RELEASE_EVENTS_API_PATH = "/release-events-api/";
     private static final String DOTS_PATH = "/api/v1/dots";
+    private static final String PIPELINES_PATH = "/pipelines/";
 
     public String getReleaseEvensApiEndpoint() {
         return getBaseUrl() + RELEASE_EVENTS_API_PATH;
@@ -35,6 +36,10 @@ public class EndpointsVelocity implements IEndpoints {
     public String getSyncApiEndpoint(String baseUrl) {
         baseUrl = removeTrailingSlash(baseUrl);
         return baseUrl + REPORTING_SYNC_PATH;
+    }
+
+    public String getPipelinesEndpoint() {
+        return getBaseUrl() + PIPELINES_PATH;
     }
 
     public String getQualityDataEndpoint() {

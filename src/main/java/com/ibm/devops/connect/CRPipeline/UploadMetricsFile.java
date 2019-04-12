@@ -111,7 +111,72 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
     public void perform(final Run<?, ?> build, FilePath workspace, Launcher launcher, final TaskListener listener)
             throws AbortException, InterruptedException, IOException {
 
-        boolean success = workspace.act(new FileUploader(this, build, listener, Jenkins.getInstance().getRootUrl() + build.getUrl()));
+        EnvVars envVars = build.getEnvironment(listener);
+
+        String testSetName = envVars.expand(this.testSetName);
+        String filePath = envVars.expand(this.filePath);
+        String environment = envVars.expand(this.environment);
+        String tenantId = envVars.expand(this.tenantId);
+        String appId = envVars.expand(this.appId);
+        String appName = envVars.expand(this.appName);
+        String appExtId = envVars.expand(this.appExtId);
+        String pluginType = envVars.expand(this.pluginType);
+        String dataFormat = envVars.expand(this.dataFormat);
+        String name = envVars.expand(this.name);
+        String metricDefinitionId = envVars.expand(this.metricDefinitionId);
+        String combineTestSuites = envVars.expand(this.combineTestSuites == null ? "" : this.combineTestSuites.toString());
+        String buildId = envVars.expand(this.buildId);
+
+        JSONObject payload = new JSONObject();
+
+        payload.put("dataSet", testSetName);
+        if (environment != null && !environment.equals("")) {
+            payload.put("environment", environment);
+        }
+        payload.put("tenant_id", tenantId);
+
+        JSONObject application = new JSONObject();
+        if (appId != null && !appId.equals("")) {
+            application.put("id", appId);
+        }
+        if (appName != null && !appName.equals("")) {
+            application.put("name", appName);
+        }
+        if (appExtId != null && !appExtId.equals("")) {
+            application.put("externalId", appExtId);
+        }
+        if (application.isEmpty()) {
+            throw new RuntimeException("Must specify at least one of: 'appId', 'appName', 'appExtId'");
+        }
+        payload.put("application", application);
+
+        JSONObject record = new JSONObject();
+        record.put("pluginType", pluginType);
+        record.put("dataFormat", dataFormat);
+        if (name != null && !name.equals("")) {
+            record.put("recordName", name);
+        }
+        if (metricDefinitionId != null && !metricDefinitionId.equals("")) {
+            record.put("metricDefinitionId", metricDefinitionId);
+        }
+        payload.put("record", record);
+
+        JSONObject options = new JSONObject();
+        options.put("combineTestSuites", combineTestSuites != null && !combineTestSuites.equals("") ? combineTestSuites.toString() : "true");
+        payload.put("options", options);
+
+        JSONObject buildObj = new JSONObject();
+        if (buildId != null && !buildId.equals("")) {
+            buildObj.put("buildId", buildId);
+        }
+        buildObj.put("url", Jenkins.getInstance().getRootUrl() + build.getUrl());
+        payload.put("build", buildObj);
+
+        System.out.println("TEST payload: " + payload.toString(2));
+
+        listener.getLogger().println("Uploading metric \"" + name + "\" to UrbanCode Velocity...");
+
+        boolean success = workspace.act(new FileUploader(filePath, payload.toString(), listener, CloudPublisher.getQualityDataUrl()));
 
         if (!success) {
             if (this.fatal != null && this.fatal.toString().equals("true")) {
@@ -160,95 +225,43 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
     }
 
     private static final class FileUploader implements FileCallable<Boolean> {
-        private UploadMetricsFile instance;
-        private Run<?, ?> build;
+        private static final long serialVersionUID = 1L;
+        private String filePath;
+        private String payload;
+        private String postUrl;
         private TaskListener listener;
-        private String buildUrl;
 
-        public FileUploader(UploadMetricsFile instance, Run<?, ?> build, TaskListener listener, String buildUrl) {
-            this.instance = instance;
-            this.build = build;
+        public FileUploader(String filePath, String payload, TaskListener listener, String postUrl) {
+            this.filePath = filePath;
+            this.payload = payload;
             this.listener = listener;
-            this.buildUrl = buildUrl;
+            this.postUrl = postUrl;
         }
 
         @Override public Boolean invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
 
-            EnvVars envVars = build.getEnvironment(listener);
-
-            String testSetName = envVars.expand(instance.testSetName);
-            String filePath = envVars.expand(instance.filePath);
-            String environment = envVars.expand(instance.environment);
-            String tenantId = envVars.expand(instance.tenantId);
-            String appId = envVars.expand(instance.appId);
-            String appName = envVars.expand(instance.appName);
-            String appExtId = envVars.expand(instance.appExtId);
-            String pluginType = envVars.expand(instance.pluginType);
-            String dataFormat = envVars.expand(instance.dataFormat);
-            String name = envVars.expand(instance.name);
-            String metricDefinitionId = envVars.expand(instance.metricDefinitionId);
-            String combineTestSuites = envVars.expand(instance.combineTestSuites == null ? "" : instance.combineTestSuites.toString());
-            String buildId = envVars.expand(instance.buildId);
-
-            JSONObject payload = new JSONObject();
-
-            payload.put("dataSet", testSetName);
-            if (environment != null && !environment.equals("")) {
-                payload.put("environment", environment);
+            File file = new File(f, this.filePath);
+            if (!file.exists()) {
+                throw new RuntimeException("File " + file.getAbsolutePath() + " does not exist");
             }
-            payload.put("tenant_id", tenantId);
 
-            JSONObject application = new JSONObject();
-            if (appId != null && !appId.equals("")) {
-                application.put("id", appId);
-            }
-            if (appName != null && !appName.equals("")) {
-                application.put("name", appName);
-            }
-            if (appExtId != null && !appExtId.equals("")) {
-                application.put("externalId", appExtId);
-            }
-            if (application.isEmpty()) {
-                throw new RuntimeException("Must specify at least one of: 'appId', 'appName', 'appExtId'");
-            }
-            payload.put("application", application);
-
-            JSONObject record = new JSONObject();
-            record.put("pluginType", pluginType);
-            record.put("dataFormat", dataFormat);
-            if (name != null && !name.equals("")) {
-                record.put("recordName", name);
-            }
-            if (metricDefinitionId != null && !metricDefinitionId.equals("")) {
-                record.put("metricDefinitionId", metricDefinitionId);
-            }
-            payload.put("record", record);
-
-            JSONObject options = new JSONObject();
-            options.put("combineTestSuites", combineTestSuites != null && !combineTestSuites.equals("") ? combineTestSuites.toString() : "true");
-            payload.put("options", options);
-
-            JSONObject build = new JSONObject();
-            if (buildId != null && !buildId.equals("")) {
-                build.put("buildId", buildId);
-            }
-            build.put("url", this.buildUrl);
-            payload.put("build", build);
-
-            System.out.println("TEST payload: " + payload.toString(2));
-
-            listener.getLogger().println("Uploading metric \"" + name + "\" to UrbanCode Velocity...");
             HttpEntity entity = MultipartEntityBuilder
                 .create()
-                .addTextBody("payload", payload.toString())
-                .addBinaryBody("testArtifact", new File(f, filePath), ContentType.create("application/octet-stream"), "filename")
+                .addTextBody("payload", this.payload)
+                .addBinaryBody("testArtifact", file, ContentType.create("application/octet-stream"), "filename")
                 .build();
 
             boolean success = false;
             try {
-                success = CloudPublisher.uploadQualityData(entity);
+                success = CloudPublisher.uploadQualityData(entity, postUrl);
             } catch (Exception ex) {
                 listener.error("Error uploading metric file: " + ex.getClass() + " - " + ex.getMessage());
+                listener.error("Stack trace:");
+                StackTraceElement[] elements = ex.getStackTrace();
+                for (int i = 0; i < elements.length; i++) {
+                    StackTraceElement s = elements[i];
+                    listener.error("\tat " + s.getClassName() + "." + s.getMethodName() + "(" + s.getFileName() + ":" + s.getLineNumber() + ")");
+                }
             }
             return success;
         }
