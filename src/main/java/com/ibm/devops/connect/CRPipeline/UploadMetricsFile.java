@@ -51,6 +51,8 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
     private String dataFormat;
     private String recordName;
     private String metricDefinitionId;
+    private String metricsRecordUrl;
+    private String description;
     private String buildId;
     private String appId;
     private String appName;
@@ -69,6 +71,8 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
         String dataFormat,
         String recordName,
         String metricDefinitionId,
+        String metricsRecordUrl,
+        String description,
         String buildId,
         String appId,
         String appName,
@@ -85,6 +89,8 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
         this.dataFormat = dataFormat;
         this.recordName = recordName;
         this.metricDefinitionId = metricDefinitionId;
+        this.metricsRecordUrl = metricsRecordUrl;
+        this.description = description;
         this.buildId = buildId;
         this.appId = appId;
         this.appName = appName;
@@ -102,6 +108,8 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
     public String getDataFormat() { return this.dataFormat; }
     public String getRecordName() { return this.recordName; }
     public String getMetricDefinitionId() { return this.metricDefinitionId; }
+    public String getMetricsRecordUrl() { return this.metricsRecordUrl; }
+    public String getDescription() { return this.description; }
     public String getBuildId() { return this.buildId; }
     public String getAppId() { return this.appId; }
     public String getAppName() { return this.appName; }
@@ -124,6 +132,8 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
         String dataFormat = envVars.expand(this.dataFormat);
         String name = envVars.expand(this.name);
         String metricDefinitionId = envVars.expand(this.metricDefinitionId);
+        String metricsRecordUrl = envVars.expand(this.metricsRecordUrl);
+        String description = envVars.expand(this.description);
         String combineTestSuites = envVars.expand(this.combineTestSuites == null ? "" : this.combineTestSuites.toString());
         String buildId = envVars.expand(this.buildId);
 
@@ -158,6 +168,12 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
         }
         if (metricDefinitionId != null && !metricDefinitionId.equals("")) {
             record.put("metricDefinitionId", metricDefinitionId);
+        }
+        if (metricsRecordUrl != null && !metricsRecordUrl.equals("")) {
+            record.put("metricsRecordUrl", metricsRecordUrl);
+        }
+        if (description != null && !description.equals("")) {
+            record.put("description", description);
         }
         payload.put("record", record);
 
