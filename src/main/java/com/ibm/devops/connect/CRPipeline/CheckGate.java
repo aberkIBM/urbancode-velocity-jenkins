@@ -35,21 +35,25 @@ public class CheckGate extends Builder implements SimpleBuildStep {
     private String pipelineId;
     private String stageName;
     private String versionId;
+    private String fatal;
 
     @DataBoundConstructor
     public CheckGate(
         String pipelineId,
         String stageName,
-        String versionId
+        String versionId,
+        String fatal
     ) {
         this.pipelineId = pipelineId;
         this.stageName = stageName;
         this.versionId = versionId;
+        this.fatal = fatal;
     }
 
     public String getPipelineId() { return this.pipelineId; }
     public String getStageName() { return this.stageName; }
     public String getVersionId() { return this.versionId; }
+    public String getFatal() { return this.fatal; }
 
     private static String getPipelinesUrl() {
         EndpointManager em = new EndpointManager();
@@ -58,16 +62,18 @@ public class CheckGate extends Builder implements SimpleBuildStep {
 
     @Override
     public void perform(final Run<?, ?> build, FilePath workspace, Launcher launcher, final TaskListener listener)
-            throws AbortException, InterruptedException, IOException {
+            throws AbortException, InterruptedException, IOException, RuntimeException {
 
         EnvVars envVars = build.getEnvironment(listener);
 
         String pipelineId = envVars.expand(this.pipelineId);
         String stageName = envVars.expand(this.stageName);
         String versionId = envVars.expand(this.versionId);
+        String fatal = envVars.expand(this.fatal);
 
         listener.getLogger().println("Check gates on pipeline: " + CheckGate.getPipelinesUrl() + pipelineId);
         listener.getLogger().println("Checking gate on stage \"" + stageName + "\" for version \"" + versionId + "\" in UrbanCode Velocity...");
+        Boolean throwException = false;
         try {
             String result = CloudPublisher.checkGate(pipelineId, stageName, versionId);
             JSONObject resultObj = JSONObject.fromObject(result);
@@ -87,13 +93,25 @@ public class CheckGate extends Builder implements SimpleBuildStep {
                 }
             }
             if (anyGateFailed) {
+                if (fatal != null && fatal.equals("true")) {
+                    throwException = true;
+                }
                 build.setResult(Result.FAILURE);
             } else {
                 listener.getLogger().println("No gate failures, gates pass.");
             }
         } catch (Exception ex) {
             listener.error("Error checking gate: " + ex.getClass() + " - " + ex.getMessage());
+            listener.error("Stack trace:");
+            StackTraceElement[] elements = ex.getStackTrace();
+            for (int i = 0; i < elements.length; i++) {
+                StackTraceElement s = elements[i];
+                listener.error("\tat " + s.getClassName() + "." + s.getMethodName() + "(" + s.getFileName() + ":" + s.getLineNumber() + ")");
+            }
             build.setResult(Result.FAILURE);
+        }
+        if (throwException) {
+            throw new RuntimeException("Gate failure and fatal set to \"true\", exception thrown to stop build.");
         }
     }
 

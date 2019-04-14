@@ -54,6 +54,7 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
     private String metricsRecordUrl;
     private String description;
     private String buildId;
+    private String buildUrl;
     private String appId;
     private String appName;
     private String appExtId;
@@ -74,6 +75,7 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
         String metricsRecordUrl,
         String description,
         String buildId,
+        String buildUrl,
         String appId,
         String appName,
         String appExtId
@@ -92,6 +94,7 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
         this.metricsRecordUrl = metricsRecordUrl;
         this.description = description;
         this.buildId = buildId;
+        this.buildUrl = buildUrl;
         this.appId = appId;
         this.appName = appName;
         this.appExtId = appExtId;
@@ -111,6 +114,7 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
     public String getMetricsRecordUrl() { return this.metricsRecordUrl; }
     public String getDescription() { return this.description; }
     public String getBuildId() { return this.buildId; }
+    public String getBuildUrl() { return this.buildUrl; }
     public String getAppId() { return this.appId; }
     public String getAppName() { return this.appName; }
     public String getAppExtId() { return this.appExtId; }
@@ -136,6 +140,7 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
         String description = envVars.expand(this.description);
         String combineTestSuites = envVars.expand(this.combineTestSuites == null ? "" : this.combineTestSuites.toString());
         String buildId = envVars.expand(this.buildId);
+        String buildUrl = envVars.expand(this.buildUrl);
 
         JSONObject payload = new JSONObject();
 
@@ -185,7 +190,11 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
         if (buildId != null && !buildId.equals("")) {
             buildObj.put("buildId", buildId);
         }
-        buildObj.put("url", Jenkins.getInstance().getRootUrl() + build.getUrl());
+        if (buildUrl != null && !buildUrl.equals("")) {
+            buildObj.put("url", buildUrl);
+        } else {
+            buildObj.put("url", Jenkins.getInstance().getRootUrl() + build.getUrl());
+        }
         payload.put("build", buildObj);
 
         System.out.println("TEST payload: " + payload.toString(2));
