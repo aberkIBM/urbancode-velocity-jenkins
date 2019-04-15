@@ -34,6 +34,7 @@ import com.ibm.devops.connect.CloudPublisher;
 
 public class UploadDeployment extends Builder implements SimpleBuildStep {
 
+    private String id;
     private String tenantId;
     private String name;
     private String succeeded;
@@ -52,6 +53,7 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
 
     @DataBoundConstructor
     public UploadDeployment(
+        String id,
         String tenantId,
         String name,
         String succeeded,
@@ -68,6 +70,7 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
         String appId,
         String appExtId
     ) {
+        this.id = id;
         this.tenantId = tenantId;
         this.name = name;
         this.succeeded = succeeded;
@@ -85,6 +88,7 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
         this.appExtId = appExtId;
     }
 
+    public String getId() { return this.id; }
     public String getTenantId() { return this.tenantId; }
     public String getName() { return this.name; }
     public String getSucceeded() { return this.succeeded; }
@@ -107,6 +111,7 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
 
         EnvVars envVars = build.getEnvironment(listener);
 
+        String id = envVars.expand(this.id);
         String tenantId = envVars.expand(this.tenantId);
         String versionName = envVars.expand(this.versionName);
         String versionExtId = envVars.expand(this.versionExtId);
@@ -126,7 +131,12 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
         JSONObject payload = new JSONObject();
 
         // user-provided inputs
-        payload.put("tenant_id", envVars.expand(tenantId));
+        payload.put("tenant_id", tenantId);
+        if (id != null && !id.equals("")) {
+            payload.put("id_external", id);
+        } else {
+            payload.put("id_external", versionExtId);
+        }
         if (versionName != null && !versionName.equals("")) {
             payload.put("version_name", versionName);
         }
