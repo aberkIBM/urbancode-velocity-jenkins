@@ -18,10 +18,19 @@ import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.tasks.Builder;
+import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.model.Job;
 import hudson.model.Build;
+import hudson.tasks.Notifier;
 import hudson.EnvVars;
+import hudson.model.AbstractBuild;
+import hudson.model.BuildListener;
+import hudson.tasks.Publisher;
+import hudson.model.Cause;
+import hudson.model.Cause.UpstreamCause;
+import jenkins.tasks.SimpleBuildStep.LastBuildActionFactory;
+import hudson.model.Actionable;
 
 import java.lang.reflect.Method;
 import hudson.model.Action;
@@ -46,7 +55,7 @@ import org.apache.http.entity.ContentType;
 
 import com.ibm.devops.connect.CloudPublisher;
 
-public class UploadASoCTestResult extends Builder implements SimpleBuildStep {
+public class UploadASoCTestResult extends Notifier {
 
     private String tenantId;
     private String environment;
@@ -90,9 +99,16 @@ public class UploadASoCTestResult extends Builder implements SimpleBuildStep {
     public String getMetricDefinition() { return metricDefinition; }
     public String getRecordName() { return recordName; }
     public String getCommitId() { return commitId; }
+    
+    @Override
+    public BuildStepMonitor getRequiredMonitorService() {
+        // BUILD means this step will only be run after the previous build is
+        // fully completed
+        return BuildStepMonitor.BUILD;
+    }
 
     @Override
-    public void perform(final Run<?, ?> build, FilePath workspace, Launcher launcher, final TaskListener listener)
+    public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener)
             throws AbortException, InterruptedException, IOException {
 
         EnvVars envVars = build.getEnvironment(listener);
@@ -107,79 +123,29 @@ public class UploadASoCTestResult extends Builder implements SimpleBuildStep {
         String recordNameValue = envVars.expand(this.recordName);
         String commitIdValue = envVars.expand(this.commitId);
 
-        // Job parentJob = (Job)build.getParent();
-        // Run firstBuild = parentJob.getBuildByNumber(1);
-        List<Action> actions = build.getActions();
+        try {
+            // thread to sleep for 1000 milliseconds
+            Thread.sleep(60000);
+         } catch (Exception e) {
+            System.out.println(e);
+         }
+
+        Job parentJob = (Job)build.getParent();
+        Run thisBuild = parentJob.getBuildByNumber(build.getNumber());
+        List<Action> actions = thisBuild.getActions();
+
+        Class scanResultClass = null;
+        Action actualAction = null;
 
         for(Action action : actions) {
-            if(action.getClass().getName().equals("com.ibm.appscan.jenkins.plugin.actions.ScanResults")) {
-                listener.getLogger().println("We have found the Scan Results from AppScan");
-
-                try {
-                    Class scanResultClass = action.getClass();
-                    Method getTotalFindingsMethod = scanResultClass.getDeclaredMethod("getTotalFindings");
-                    Method getInfoCountMethod = scanResultClass.getDeclaredMethod("getInfoCount");
-                    Method getLowCountMethod = scanResultClass.getDeclaredMethod("getLowCount");
-                    Method getMediumCountMethod = scanResultClass.getDeclaredMethod("getMediumCount");
-                    Method getHighCountMethod = scanResultClass.getDeclaredMethod("getHighCount");
-
-                    int totalFindings = (int)getTotalFindingsMethod.invoke(action);
-                    int lowFindings = (int)getLowCountMethod.invoke(action);
-                    int mediumFindings = (int)getMediumCountMethod.invoke(action);
-                    int highFindings = (int)getHighCountMethod.invoke(action);
-                    int infoFindings = (int)getInfoCountMethod.invoke(action);
-
-                    // The ASoC plugin has a bug where the info count is 0.  That is not accurate, so we adjust
-                    if(infoFindings == 0 && totalFindings != (lowFindings + mediumFindings + highFindings + infoFindings)) {
-                        infoFindings = totalFindings - (lowFindings + mediumFindings + highFindings);
-                    }
-
-                    listener.getLogger().println("Total ----> " + totalFindings);
-                    listener.getLogger().println("info ----> " + infoFindings);
-                    listener.getLogger().println("low ----> " + lowFindings);
-                    listener.getLogger().println("medium ----> " + mediumFindings);
-                    listener.getLogger().println("high ----> " + highFindings);
-
-                    JSONObject payload = new JSONObject();
-                    JSONObject application = new JSONObject();
-                    JSONObject record = new JSONObject();
-                    JSONObject value = new JSONObject();
-                    JSONObject buildObj = new JSONObject();
-
-                    buildObj.put("url", buildUrlValue);
-
-                    application.put("id", appIdValue);
-                    application.put("name", appNameValue);
-                    application.put("externalId", appExtIdValue);
-
-                    value.put("High", highFindings);
-                    value.put("Medium", mediumFindings);
-                    value.put("Low", lowFindings);
-                    value.put("Info", infoFindings);
-
-                    record.put("metricDefinitionId", metricDefinitionValue);
-                    record.put("dataFormat", "json");
-                    record.put("recordName", recordNameValue);
-                    record.put("pluginType", "templatePlugin");
-                    record.put("value", value);
-
-                    payload.put("dataSet", "AppScan on Cloud Scan Results");
-                    payload.put("environment", environmentValue);
-                    payload.put("tenantId", tenantIdValue);
-                    payload.put("record", record);
-                    payload.put("application", application);
-                    payload.put("build", buildObj);
-
-                    listener.getLogger().println("Payload Doc To Upload: " + payload.toString());
-                    listener.getLogger().println("Uploading Payload Doc");
-                    try {
-                        CloudPublisher.uploadQualityDataRaw(payload.toString());
-                        listener.getLogger().println("Upload Complete");
-                    } catch (Exception ex) {
-                        listener.error("Error uploading ASoC data: " + ex.getClass() + " - " + ex.getMessage());
-                        build.setResult(Result.FAILURE);
-                    }
-
+            listener.getLogger().println(action.getClass().getName());
+            if(action.getClass().getName().equals("com.ibm.appscan.jenkins.plugin.actions.ResultsRetriever")) {
+                Class retrieverClass = action.getClass();
+                Action retrieverAction = action;
+                try { 
+                    listener.getLogger().println("[UCV] Triggering loading of ASoC Results");
+                    Method checkResults = retrieverClass.getDeclaredMethod("checkResults", Run.class);
+                    checkResults.invoke(retrieverAction, build);
                 } catch (NoSuchMethodException e1) {
                     listener.getLogger().println("Could not find method on the ScanResult Object.  Is this running the proper version of AppScan on Cloud plugin?");
                 } catch (IllegalAccessException e2) {
@@ -190,10 +156,99 @@ public class UploadASoCTestResult extends Builder implements SimpleBuildStep {
             }
         }
 
+        build.reload();
+        List<Action> actualBuildActions = build.getActions();
+        // actualAction = actualBuild.getAction(Class.forName("com.ibm.appscan.jenkins.plugin.actions.ScanResults").asSubclass(Actionable.class));
+        
+        for(Action act : actualBuildActions) {
+            listener.getLogger().println("---->" + act.getClass().getName());
+            if(act.getClass().getName().equals("com.ibm.appscan.jenkins.plugin.actions.ScanResults")) {
+                scanResultClass = act.getClass();
+                actualAction = act;
+            }
+        }
+
+        if(actualAction != null) {
+            listener.getLogger().println("We have found the Scan Results from AppScan");
+
+            try {
+                // Class scanResultClass = action.getClass();
+                Method getTotalFindingsMethod = scanResultClass.getDeclaredMethod("getTotalFindings");
+                Method getInfoCountMethod = scanResultClass.getDeclaredMethod("getInfoCount");
+                Method getLowCountMethod = scanResultClass.getDeclaredMethod("getLowCount");
+                Method getMediumCountMethod = scanResultClass.getDeclaredMethod("getMediumCount");
+                Method getHighCountMethod = scanResultClass.getDeclaredMethod("getHighCount");
+
+                int totalFindings = (int)getTotalFindingsMethod.invoke(actualAction);
+                int lowFindings = (int)getLowCountMethod.invoke(actualAction);
+                int mediumFindings = (int)getMediumCountMethod.invoke(actualAction);
+                int highFindings = (int)getHighCountMethod.invoke(actualAction);
+                int infoFindings = (int)getInfoCountMethod.invoke(actualAction);
+
+                // The ASoC plugin has a bug where the info count is 0.  That is not accurate, so we adjust
+                if(infoFindings == 0 && totalFindings != (lowFindings + mediumFindings + highFindings + infoFindings)) {
+                    infoFindings = totalFindings - (lowFindings + mediumFindings + highFindings);
+                }
+
+                listener.getLogger().println("Total ----> " + totalFindings);
+                listener.getLogger().println("info ----> " + infoFindings);
+                listener.getLogger().println("low ----> " + lowFindings);
+                listener.getLogger().println("medium ----> " + mediumFindings);
+                listener.getLogger().println("high ----> " + highFindings);
+
+                JSONObject payload = new JSONObject();
+                JSONObject application = new JSONObject();
+                JSONObject record = new JSONObject();
+                JSONObject value = new JSONObject();
+                JSONObject buildObj = new JSONObject();
+
+                buildObj.put("url", buildUrlValue);
+
+                application.put("id", appIdValue);
+                application.put("name", appNameValue);
+                application.put("externalId", appExtIdValue);
+
+                value.put("High", highFindings);
+                value.put("Medium", mediumFindings);
+                value.put("Low", lowFindings);
+                value.put("Info", infoFindings);
+
+                record.put("metricDefinitionId", metricDefinitionValue);
+                record.put("dataFormat", "json");
+                record.put("recordName", recordNameValue);
+                record.put("pluginType", "templatePlugin");
+                record.put("value", value);
+
+                payload.put("dataSet", "AppScan on Cloud Scan Results");
+                payload.put("environment", environmentValue);
+                payload.put("tenantId", tenantIdValue);
+                payload.put("record", record);
+                payload.put("application", application);
+                payload.put("build", buildObj);
+
+                listener.getLogger().println("Payload Doc To Upload: " + payload.toString());
+                listener.getLogger().println("Uploading Payload Doc");
+                try {
+                    CloudPublisher.uploadQualityDataRaw(payload.toString());
+                    listener.getLogger().println("Upload Complete");
+                } catch (Exception ex) {
+                    listener.error("Error uploading ASoC data: " + ex.getClass() + " - " + ex.getMessage());
+                    build.setResult(Result.FAILURE);
+                }
+
+            } catch (NoSuchMethodException e1) {
+                listener.getLogger().println("Could not find method on the ScanResult Object.  Is this running the proper version of AppScan on Cloud plugin?");
+            } catch (IllegalAccessException e2) {
+                listener.getLogger().println("Could not acces the method on the ScanResult Object.  Is this running the proper version of AppScan on Cloud plugin?");
+            } catch (InvocationTargetException e3) {
+                listener.getLogger().println("Could not invoke the target on the ScanResult Object.  Is this running the proper version of AppScan on Cloud plugin?");
+            }
+        }
+        return true;
     }
 
     @Extension
-    public static class UploadJUnitTestResultDescriptor extends BuildStepDescriptor<Builder> {
+    public static class UploadJUnitTestResultDescriptor extends BuildStepDescriptor<Publisher> {
 
         public UploadJUnitTestResultDescriptor() {
             load();
