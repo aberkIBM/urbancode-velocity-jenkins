@@ -26,6 +26,9 @@
     <f:entry title="Fatal" field="fatal">
         <f:checkbox />
     </f:entry>
+    <f:entry title="Debug" field="debug">
+        <f:checkbox />
+    </f:entry>
     <f:entry title="Record Name" field="recordName">
         <f:textbox />
     </f:entry>

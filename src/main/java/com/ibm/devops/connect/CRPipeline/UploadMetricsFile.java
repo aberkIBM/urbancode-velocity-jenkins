@@ -47,6 +47,7 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
     private String environment;
     private Boolean combineTestSuites;
     private Boolean fatal;
+    private Boolean debug;
     private String pluginType;
     private String dataFormat;
     private String recordName;
@@ -68,6 +69,7 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
         String environment,
         Boolean combineTestSuites,
         Boolean fatal,
+        Boolean debug,
         String pluginType,
         String dataFormat,
         String recordName,
@@ -87,6 +89,7 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
         this.environment = environment;
         this.combineTestSuites = combineTestSuites;
         this.fatal = fatal;
+        this.debug = debug;
         this.pluginType = pluginType;
         this.dataFormat = dataFormat;
         this.recordName = recordName;
@@ -107,6 +110,7 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
     public String getEnvironment() { return this.environment; }
     public Boolean getCombineTestSuites() { return this.combineTestSuites; }
     public Boolean getFatal() { return this.fatal; }
+    public Boolean getDebug() { return this.debug; }
     public String getPluginType() { return this.pluginType; }
     public String getDataFormat() { return this.dataFormat; }
     public String getRecordName() { return this.recordName; }
@@ -197,6 +201,9 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
         }
         payload.put("build", buildObj);
 
+        if (this.debug != null && this.debug.toString().equals("true")) {
+            listener.getLogger().println("payload: " + payload.toString());
+        }
         System.out.println("TEST payload: " + payload.toString(2));
 
         listener.getLogger().println("Uploading metric \"" + name + "\" to UrbanCode Velocity...");
@@ -265,7 +272,10 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
 
         @Override public Boolean invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
 
-            File file = new File(f, this.filePath);
+            File file = new File(this.filePath);
+            if (!file.isAbsolute()) {
+                file = new File(f, this.filePath);
+            }
             if (!file.exists()) {
                 throw new RuntimeException("File " + file.getAbsolutePath() + " does not exist");
             }
