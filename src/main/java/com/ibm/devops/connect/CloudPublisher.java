@@ -194,7 +194,7 @@ public class CloudPublisher  {
             HttpPost postMethod = new HttpPost(url);
             attachHeaders(postMethod);
             postMethod.setHeader("Content-Type", "application/json");
-            postMethod.setHeader("Authorization", "Bearer " + Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getApiToken());
+            postMethod.setHeader("Authorization", "UserAccessKey " + Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getApiToken());
             postMethod.setEntity(new StringEntity(payload));
 
             response = httpClient.execute(postMethod);
@@ -227,7 +227,7 @@ public class CloudPublisher  {
             HttpPost postMethod = new HttpPost(url);
             attachHeaders(postMethod);
             postMethod.setHeader("Content-Type", "application/json");
-            postMethod.setHeader("Authorization", "Bearer " + Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getApiToken());
+            postMethod.setHeader("Authorization", "UserAccessKey " + Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getApiToken());
             postMethod.setEntity(new StringEntity(payload));
 
             response = httpClient.execute(postMethod);
@@ -266,7 +266,7 @@ public class CloudPublisher  {
             HttpGet getMethod = new HttpGet(uri);
             attachHeaders(getMethod);
             getMethod.setHeader("Accept", "application/json");
-            getMethod.setHeader("Authorization", "Bearer " + Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getApiToken());
+            getMethod.setHeader("Authorization", "UserAccessKey " + Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getApiToken());
 
             response = httpClient.execute(getMethod);
             resStr = EntityUtils.toString(response.getEntity());
@@ -295,11 +295,12 @@ public class CloudPublisher  {
 
         try {
             HttpPost postMethod = new HttpPost(url);
+            postMethod.setHeader("Authorization", "UserAccessKey " + Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getApiToken());
             postMethod.setEntity(entity);
 
             response = httpClient.execute(postMethod);
             resStr = EntityUtils.toString(response.getEntity());
-            if (response.getStatusLine().toString().contains("201")) {
+            if (response.getStatusLine().toString().contains("200")) {
                 log.info(localLogPrefix + "Upload Quality Data successfully");
                 return true;
             } else {
@@ -327,7 +328,7 @@ public class CloudPublisher  {
             HttpPost postMethod = new HttpPost(url);
             attachHeaders(postMethod);
             postMethod.setHeader("Content-Type", "application/json");
-            postMethod.setHeader("Authorization", "Bearer " + Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getApiToken());
+            postMethod.setHeader("Authorization", "UserAccessKey " + Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getApiToken());
             postMethod.setEntity(new StringEntity(payload));
 
             response = httpClient.execute(postMethod);

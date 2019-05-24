@@ -152,7 +152,7 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
         if (environment != null && !environment.equals("")) {
             payload.put("environment", environment);
         }
-        payload.put("tenant_id", tenantId);
+        payload.put("tenantId", tenantId);
 
         JSONObject application = new JSONObject();
         if (appId != null && !appId.equals("")) {
@@ -283,7 +283,7 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
             HttpEntity entity = MultipartEntityBuilder
                 .create()
                 .addTextBody("payload", this.payload)
-                .addBinaryBody("testArtifact", file, ContentType.create("application/octet-stream"), "filename")
+                .addBinaryBody("file", file, ContentType.create("application/octet-stream"), "filename")
                 .build();
 
             boolean success = false;

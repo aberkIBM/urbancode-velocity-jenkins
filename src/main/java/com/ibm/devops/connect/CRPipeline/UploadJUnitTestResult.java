@@ -149,9 +149,9 @@ public class UploadJUnitTestResult extends Builder implements SimpleBuildStep {
                 options.put("combineTestSuites", combineTestSuites.toString());
             }
 
-            payload.put("metricName", testSetName);
+            payload.put("dataSet", testSetName);
             payload.put("environment", environment);
-            payload.put("tenant_id", tenantId);
+            payload.put("tenantId", tenantId);
 
             payload.put("application", application);
             payload.put("record", record);
@@ -169,7 +169,7 @@ public class UploadJUnitTestResult extends Builder implements SimpleBuildStep {
             HttpEntity entity = MultipartEntityBuilder
                 .create()
                 .addTextBody("payload", payload.toString())
-                .addBinaryBody("testArtifact", new File(f, filePath), ContentType.create("application/octet-stream"), "filename")
+                .addBinaryBody("file", new File(f, filePath), ContentType.create("application/octet-stream"), "filename")
                 .build();
 
             boolean success = false;

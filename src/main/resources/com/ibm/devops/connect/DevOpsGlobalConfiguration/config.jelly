@@ -41,7 +41,7 @@
             <c:select/>
         </f:entry>
         <f:advanced>
-            <f:entry title="${%Api Token}" field="apiToken">
+            <f:entry title="${%User Access Key}" field="apiToken">
                 <f:password />
             </f:entry>
             <f:entry title="${%Rabbit MQ Port}" field="rabbitMQPort">
