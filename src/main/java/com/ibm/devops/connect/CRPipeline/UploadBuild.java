@@ -46,6 +46,7 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
     private String appName;
     private String appId;
     private String appExtId;
+    private Boolean debug;
 
     @DataBoundConstructor
     public UploadBuild(
@@ -59,7 +60,8 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
         String endTime,
         String appName,
         String appId,
-        String appExtId
+        String appExtId,
+        Boolean debug
     ) {
         this.tenantId = tenantId;
         this.id = id;
@@ -72,6 +74,7 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
         this.appName = appName;
         this.appId = appId;
         this.appExtId = appExtId;
+        this.debug = debug;
     }
 
     public String getId() { return this.id; }
@@ -85,6 +88,7 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
     public String getAppName() { return this.appName; }
     public String getAppId() { return this.appId; }
     public String getAppExtId() { return this.appExtId; }
+    public Boolean getDebug() { return this.debug; }
 
     @Override
     public void perform(final Run<?, ?> build, FilePath workspace, Launcher launcher, final TaskListener listener)
@@ -177,6 +181,10 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
         payload.put("url", Jenkins.getInstance().getRootUrl() + build.getUrl());
 
         System.out.println("TEST payload: " + payload.toString(2));
+
+        if (this.debug != null && this.debug.toString().equals("true")) {
+            listener.getLogger().println("payload: " + payload.toString());
+        }
 
         listener.getLogger().println("Uploading build \"" + payload.get("id") + "\" to UrbanCode Velocity...");
         try {

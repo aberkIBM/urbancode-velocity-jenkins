@@ -50,6 +50,7 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
     private String appName;
     private String appId;
     private String appExtId;
+    private Boolean debug;
 
     @DataBoundConstructor
     public UploadDeployment(
@@ -68,7 +69,8 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
         String endTime,
         String appName,
         String appId,
-        String appExtId
+        String appExtId,
+        Boolean debug
     ) {
         this.id = id;
         this.tenantId = tenantId;
@@ -86,6 +88,7 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
         this.appName = appName;
         this.appId = appId;
         this.appExtId = appExtId;
+        this.debug = debug;
     }
 
     public String getId() { return this.id; }
@@ -104,6 +107,7 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
     public String getAppName() { return this.appName; }
     public String getAppId() { return this.appId; }
     public String getAppExtId() { return this.appExtId; }
+    public Boolean getDebug() { return this.debug; }
 
     @Override
     public void perform(final Run<?, ?> build, FilePath workspace, Launcher launcher, final TaskListener listener)
@@ -210,6 +214,10 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
 
 
         System.out.println("TEST payload: " + payload.toString(2));
+
+        if (this.debug != null && this.debug.toString().equals("true")) {
+            listener.getLogger().println("payload: " + payload.toString());
+        }
 
         listener.getLogger().println("Uploading deployment \"" + payload.get("version_name") + "\" of \"" + payload.get("name") + "\" to UrbanCode Velocity...");
         try {
