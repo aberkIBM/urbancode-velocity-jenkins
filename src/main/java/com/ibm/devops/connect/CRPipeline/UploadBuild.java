@@ -38,6 +38,7 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
     private String tenantId;
     private String id;
     private String name;
+    private String versionName;
     private String revision;
     private String requestor;
     private String succeeded;
@@ -53,6 +54,7 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
         String tenantId,
         String id,
         String name,
+        String versionName,
         String revision,
         String requestor,
         String succeeded,
@@ -66,6 +68,7 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
         this.tenantId = tenantId;
         this.id = id;
         this.name = name;
+        this.versionName = versionName;
         this.revision = revision;
         this.requestor = requestor;
         this.succeeded = succeeded;
@@ -79,6 +82,7 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
 
     public String getId() { return this.id; }
     public String getName() {return this.name; }
+    public String getVersionName() {return this.versionName; }
     public String getTenantId() { return this.tenantId; }
     public String getRevision() { return this.revision; }
     public String getRequestor() { return this.requestor; }
@@ -98,6 +102,7 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
 
         String id = envVars.expand(this.id);
         String name = envVars.expand(this.name);
+        String versionName = envVars.expand(this.versionName);
         String tenantId = envVars.expand(this.tenantId);
         String revision = envVars.expand(this.revision);
         String requestor = envVars.expand(this.requestor);
@@ -175,6 +180,9 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
             payload.put("name", name);
         } else {
             payload.put("name", build.getDisplayName());
+        }
+        if (versionName != null && !versionName.equals("")) {
+            payload.put("versionName", versionName);
         }
 
         // build-derived inputs

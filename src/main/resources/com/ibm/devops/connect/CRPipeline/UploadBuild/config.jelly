@@ -21,7 +21,10 @@
         <f:entry title="ID" field="id">
             <f:textbox />
         </f:entry>
-        <f:entry title="Name" field="name">
+        <f:entry title="Build Name" field="name">
+            <f:textbox />
+        </f:entry>
+        <f:entry title="Version Name" field="versionName">
             <f:textbox />
         </f:entry>
         <f:entry title="Requestor" field="requestor">
