@@ -144,7 +144,7 @@ public abstract class AbstractJenkinsStatus {
 
         // Try to get from the crAction
         SourceData sd = crAction.getSourceData();
-        if(sd != null) {
+        if (sd != null) {
             cloudCause.setSourceData(sd);
         }
 
