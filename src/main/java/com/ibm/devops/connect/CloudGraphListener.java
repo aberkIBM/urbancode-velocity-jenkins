@@ -60,10 +60,12 @@ public class CloudGraphListener implements GraphListener {
         FlowExecution execution = node.getExecution();
 
         WorkflowRun workflowRun = null;
+        TaskListener listener = null;
 
         try {
             if (execution.getOwner().getExecutable() instanceof WorkflowRun) {
                 workflowRun = (WorkflowRun)(execution.getOwner().getExecutable());
+                listener = execution.getOwner().getListener();
             }
         } catch (IOException e) {
             log.error("HIT THE IOEXCEPTION: " + e);
@@ -80,7 +82,7 @@ public class CloudGraphListener implements GraphListener {
         boolean isPauseNode = PauseAction.isPaused(node);
 
         if(isStartNode || isEndNode || isPauseNode) {
-            JenkinsPipelineStatus status = new JenkinsPipelineStatus(workflowRun, cloudCause, node, null, isStartNode, isPauseNode);
+            JenkinsPipelineStatus status = new JenkinsPipelineStatus(workflowRun, cloudCause, node, listener, isStartNode, isPauseNode);
             JSONObject statusUpdate = status.generate(false);
             CloudPublisher.uploadJobStatus(statusUpdate);
         }
