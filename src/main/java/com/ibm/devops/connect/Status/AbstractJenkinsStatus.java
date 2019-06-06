@@ -174,12 +174,12 @@ public abstract class AbstractJenkinsStatus {
         DRAData data = cloudCause.getDRAData();
 
         List<Action> actions = run.getActions();
-        if(data == null) {
+        if (data == null) {
             data = crAction.getDRAData();
             cloudCause.setDRAData(data);
         }
 
-        if(data == null) {
+        if (data == null) {
             data = new DRAData();
         }
 

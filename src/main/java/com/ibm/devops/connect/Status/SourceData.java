@@ -81,11 +81,12 @@ public class SourceData {
             }
 
             GitClient gitClient = git.getClient();
-            RevCommit commit = gitClient.withRepository(new RevCommitRepositoryCallback(gitBuild));
+            if (gitClient.hasGitRepo()) {
+                RevCommit commit = gitClient.withRepository(new RevCommitRepositoryCallback(gitBuild));
 
-            this.shortMessage = commit.getShortMessage();
-            this.fullMessage = commit.getFullMessage();
-
+                this.shortMessage = commit.getShortMessage();
+                this.fullMessage = commit.getFullMessage();
+            }
         } catch (IOException ioEx) {
             log.warn("IOException thrown while trying to retrieve commit message in populateCommitMessage: " + ioEx);
         } catch (InterruptedException intEx) {
