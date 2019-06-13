@@ -40,10 +40,10 @@
         <f:entry title="Jenkins credentials" field="credentialsId">
             <c:select/>
         </f:entry>
+        <f:entry title="${%User Access Key}" field="apiToken">
+            <f:password />
+        </f:entry>
         <f:advanced>
-            <f:entry title="${%User Access Key}" field="apiToken">
-                <f:password />
-            </f:entry>
             <f:entry title="${%Rabbit MQ Port}" field="rabbitMQPort">
                 <f:textbox />
             </f:entry>
