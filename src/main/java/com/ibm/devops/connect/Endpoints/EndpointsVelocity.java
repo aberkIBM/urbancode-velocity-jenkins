@@ -15,7 +15,7 @@ public class EndpointsVelocity implements IEndpoints {
     private static final String SYNC_STORE_ENPOINT = "https://bogus/";
     private static final String CONNECT_ENPOINT = "https://bogus";
     private static final String REPORTING_SYNC_PATH = "/reporting-sync-api/";
-    private static final String QUALITY_DATA_PATH = "/reporting-consumer/qualityData";
+    private static final String QUALITY_DATA_PATH = "/api/v1/metrics/upload";
     private static final String QUALITY_DATA_RAW_PATH = "/api/v1/metrics";
     private static final String RELEASE_EVENTS_API_PATH = "/release-events-api/";
     private static final String DOTS_PATH = "/api/v1/dots";
