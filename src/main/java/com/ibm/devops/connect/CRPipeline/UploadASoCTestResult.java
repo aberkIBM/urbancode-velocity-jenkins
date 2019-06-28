@@ -278,7 +278,8 @@ public class UploadASoCTestResult extends Notifier {
 
         @Override
         public boolean isApplicable(Class<? extends AbstractProject> jobType) {
-            return true;
+            // This is not meant for public use in its current form.
+            return false;
         }
     }
 }
