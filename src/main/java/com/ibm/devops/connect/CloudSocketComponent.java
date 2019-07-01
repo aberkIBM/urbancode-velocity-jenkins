@@ -82,15 +82,12 @@ public class CloudSocketComponent {
         buildJobList.runAsJenkinsUser(null);
     }
 
-    public boolean isAMQPConnected() {
-        if(this.conn == null) {
-            log.info(logPrefix + "IT WAS NULLLLLLLLL----->>>>");
+    public static boolean isAMQPConnected() {
+        if(conn == null) {
             return false;
         }
 
-            log.info(logPrefix + "AAAA----->>>> " + !this.conn.isOpen());
-
-        return this.conn.isOpen();
+        return conn.isOpen();
     }
 
     public void connectToAMQP() throws Exception {

@@ -46,10 +46,13 @@ public class ReconnectExecutor {
             try {
                 if (!cloudSocketInstance.isAMQPConnected()) {
                     try {
+                        log.info("Reconnecting to AMQP");
                         cloudSocketInstance.connectToAMQP();
                     } catch (Exception e) {
                         log.error("Unable to Reconnect to UCV AMQP", e);
                     }
+                } else {
+                    System.out.println("EVERYTHING IS OK");
                 }
             }
             finally {

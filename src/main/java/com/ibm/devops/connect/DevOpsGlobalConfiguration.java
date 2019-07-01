@@ -36,6 +36,7 @@ import hudson.security.ACL;
 import jenkins.model.Jenkins;
 
 import com.ibm.devops.connect.CloudPublisher;
+import com.ibm.devops.connect.CloudSocketComponent;
 /**
  * Created by lix on 7/20/17.
  */
@@ -149,7 +150,14 @@ public class DevOpsGlobalConfiguration extends GlobalConfiguration {
         try {
             boolean connected = CloudPublisher.testConnection(syncId, syncToken, baseUrl);
             if (connected) {
-                return FormValidation.ok("Successful Connection to Velocity Services");
+                boolean amqpConnected = CloudSocketComponent.isAMQPConnected();
+
+                String rabbitMessage = "Not connected to RabbitMQ and is unable to run Jenkins jobs from UCV.";
+                if(amqpConnected) {
+                    rabbitMessage = "Connected to RabbitMQ successfully, ready to run Jenkins jobs from UCV.";
+                }
+
+                return FormValidation.ok("Successful Connection to Velocity Services.\n" + rabbitMessage);
             } else {
                 return FormValidation.error("Could not connect to Velocity.  Please check your URL and credentials provided.");
             }

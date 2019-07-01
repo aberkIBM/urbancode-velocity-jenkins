@@ -432,7 +432,7 @@ public class CloudPublisher  {
 
             if (response.getStatusLine().toString().contains("200")) {
                 // get 200 response
-                log.info("Connected to Velocity service successfully");
+                log.info("Connected to Velocity service successfully.");
                 return true;
             } else {
                 log.info("Could not authenticate to Velocity Services");
