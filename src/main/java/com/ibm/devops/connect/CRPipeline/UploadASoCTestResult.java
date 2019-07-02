@@ -121,7 +121,6 @@ public class UploadASoCTestResult extends Notifier {
         String buildUrlValue = envVars.expand(this.buildUrl);
         String metricDefinitionValue = envVars.expand(this.metricDefinition);
         String recordNameValue = envVars.expand(this.recordName);
-        String commitIdValue = envVars.expand(this.commitId);
 
         try {
             // thread to sleep for 1000 milliseconds

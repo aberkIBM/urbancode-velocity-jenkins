@@ -48,9 +48,12 @@ public class ConnectComputerListener extends ComputerListener {
                 log.error(logPrefix + "Exception caught while connecting to Cloud Services: " + e);
             }
 
-            if(reconnectExecutor == null) {
-                reconnectExecutor = new ReconnectExecutor(cloudSocketInstance);
-                reconnectExecutor.startReconnectExecutor();
+            // Synchronized to protect lazy initalization of static variable
+            synchronized(this) {
+                if(reconnectExecutor == null) {
+                    reconnectExecutor = new ReconnectExecutor(cloudSocketInstance);
+                    reconnectExecutor.startReconnectExecutor();
+                }
             }
         }
     }

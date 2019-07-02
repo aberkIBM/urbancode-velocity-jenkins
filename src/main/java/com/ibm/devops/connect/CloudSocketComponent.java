@@ -127,41 +127,47 @@ public class CloudSocketComponent {
         }
         factory.setPort(port);
 
-        if(this.conn != null && this.conn.isOpen()) {
-            this.conn.abort();
-        }
+        // Synchronized to protect manipulation of static variable
+        synchronized (this) {
 
-        this.conn = factory.newConnection();
-
-        Channel channel = conn.createChannel();
-
-        log.info("Connecting to RabbitMQ");
-
-        String EXCHANGE_NAME = "jenkins";
-        String queueName = "jenkins.client." + syncId;
-
-        Consumer consumer = new DefaultConsumer(channel) {
-            @Override
-            public void handleDelivery(String consumerTag, Envelope envelope,
-                                        AMQP.BasicProperties properties, byte[] body) throws IOException {
-
-                if (envelope.getRoutingKey().contains(".heartbeat")) {
-                    String syncId = getSyncId();
-                    String syncToken = getSyncToken();
-
-                    String url = removeTrailingSlash(Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getBaseUrl());
-                    boolean connected = CloudPublisher.testConnection(syncId, syncToken, url);
-                } else {
-                    String message = new String(body, "UTF-8");
-                    System.out.println(" [x] Received '" + message + "'");
-
-                    CloudWorkListener2 cloudWorkListener = new CloudWorkListener2();
-                    cloudWorkListener.call("startJob", message);
-                }
+            if(this.conn != null && this.conn.isOpen()) {
+                this.conn.abort();
             }
-        };
 
-        channel.basicConsume(queueName, true, consumer);}
+            conn = factory.newConnection();
+
+            Channel channel = conn.createChannel();
+
+            log.info("Connecting to RabbitMQ");
+
+            String EXCHANGE_NAME = "jenkins";
+            String queueName = "jenkins.client." + syncId;
+
+            Consumer consumer = new DefaultConsumer(channel) {
+                @Override
+                public void handleDelivery(String consumerTag, Envelope envelope,
+                                            AMQP.BasicProperties properties, byte[] body) throws IOException {
+
+                    if (envelope.getRoutingKey().contains(".heartbeat")) {
+                        String syncId = getSyncId();
+                        String syncToken = getSyncToken();
+
+                        String url = removeTrailingSlash(Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getBaseUrl());
+                        boolean connected = CloudPublisher.testConnection(syncId, syncToken, url);
+                    } else {
+                        String message = new String(body, "UTF-8");
+                        System.out.println(" [x] Received '" + message + "'");
+
+                        CloudWorkListener2 cloudWorkListener = new CloudWorkListener2();
+                        cloudWorkListener.call("startJob", message);
+                    }
+                }
+            };
+
+            channel.basicConsume(queueName, true, consumer);
+        }
+        
+    }
 
     private String removeTrailingSlash(String url) {
         if (url.endsWith("/")) {

@@ -156,7 +156,8 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
           payload.put("status", succeeded.equals("true") ? "success" : "failure");
         } else {
             String computedStatus = "failure";
-            if (build.getResult() == null || build.getResult().equals(Result.SUCCESS)) {
+            Result buildResult = build.getResult();
+            if (buildResult == null || buildResult.equals(Result.SUCCESS)) {
                 computedStatus = "success";
             }
             payload.put("status", computedStatus);

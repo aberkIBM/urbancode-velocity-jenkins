@@ -196,7 +196,8 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
             payload.put("result", succeeded.equals("true") ? "Success" : "Failed");
         } else {
             String computedStatus = "Failed";
-            if (build.getResult() == null || build.getResult().equals(Result.SUCCESS)) {
+            Result buildResult = build.getResult();
+            if (buildResult == null || buildResult.equals(Result.SUCCESS)) {
                 computedStatus = "Success";
             }
             payload.put("result", computedStatus);
