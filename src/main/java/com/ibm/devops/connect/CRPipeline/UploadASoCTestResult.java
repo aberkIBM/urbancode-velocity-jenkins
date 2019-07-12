@@ -122,13 +122,6 @@ public class UploadASoCTestResult extends Notifier {
         String metricDefinitionValue = envVars.expand(this.metricDefinition);
         String recordNameValue = envVars.expand(this.recordName);
 
-        try {
-            // thread to sleep for 1000 milliseconds
-            Thread.sleep(60000);
-         } catch (Exception e) {
-            System.out.println(e);
-         }
-
         Job parentJob = (Job)build.getParent();
         Run thisBuild = parentJob.getBuildByNumber(build.getNumber());
         List<Action> actions = thisBuild.getActions();
@@ -251,11 +244,6 @@ public class UploadASoCTestResult extends Notifier {
 
         public UploadJUnitTestResultDescriptor() {
             load();
-        }
-
-        @Override
-        public String getHelpFile() {
-            return "/plugin/ibm-ucdeploy-build-steps/publish.html";
         }
 
         @Override

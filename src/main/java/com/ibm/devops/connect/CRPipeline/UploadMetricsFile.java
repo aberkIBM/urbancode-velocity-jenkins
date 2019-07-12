@@ -229,11 +229,6 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
         }
 
         @Override
-        public String getHelpFile() {
-            return "/plugin/ibm-ucdeploy-build-steps/publish.html";
-        }
-
-        @Override
         public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
             req.bindJSON(this, formData);
             save();

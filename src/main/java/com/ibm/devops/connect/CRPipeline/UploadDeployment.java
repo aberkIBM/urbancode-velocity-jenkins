@@ -193,12 +193,12 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
             }
         }
         if (succeeded != null && !succeeded.equals("")) {
-            payload.put("result", succeeded.equals("true") ? "Success" : "Failed");
+            payload.put("result", succeeded.equals("true") ? "success" : "failed");
         } else {
             String computedStatus = "Failed";
             Result buildResult = build.getResult();
             if (buildResult == null || buildResult.equals(Result.SUCCESS)) {
-                computedStatus = "Success";
+                computedStatus = "success";
             }
             payload.put("result", computedStatus);
         }
@@ -240,11 +240,6 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
 
         public UploadDeploymentDescriptor() {
             load();
-        }
-
-        @Override
-        public String getHelpFile() {
-            return "/plugin/ibm-ucdeploy-build-steps/publish.html";
         }
 
         @Override

@@ -152,12 +152,12 @@ public class DevOpsGlobalConfiguration extends GlobalConfiguration {
             if (connected) {
                 boolean amqpConnected = CloudSocketComponent.isAMQPConnected();
 
-                String rabbitMessage = "Not connected to RabbitMQ and is unable to run Jenkins jobs from UCV.";
+                String rabbitMessage = "Not connected to RabbitMQ. Unable to run Jenkins jobs from UCV.";
                 if(amqpConnected) {
-                    rabbitMessage = "Connected to RabbitMQ successfully, ready to run Jenkins jobs from UCV.";
+                    rabbitMessage = "Connected to RabbitMQ successfully. Ready to run Jenkins jobs from UCV.";
                 }
 
-                return FormValidation.ok("Successful Connection to Velocity Services.\n" + rabbitMessage);
+                return FormValidation.ok("Successful connection to Velocity Services.\n" + rabbitMessage);
             } else {
                 return FormValidation.error("Could not connect to Velocity.  Please check your URL and credentials provided.");
             }
