@@ -37,6 +37,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.entity.ContentType;
 
 import com.ibm.devops.connect.CloudPublisher;
+import com.ibm.devops.connect.DevOpsGlobalConfiguration;
 
 public class UploadMetricsFile extends Builder implements SimpleBuildStep {
 
@@ -208,8 +209,9 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
 
         listener.getLogger().println("Uploading metric \"" + name + "\" to UrbanCode Velocity...");
 
-        boolean success = workspace.act(new FileUploader(filePath, payload.toString(), listener, CloudPublisher.getQualityDataUrl()));
+        String userAccessKey = Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getApiToken();
 
+        boolean success = workspace.act(new FileUploader(filePath, payload.toString(), listener, CloudPublisher.getQualityDataUrl(), userAccessKey));
         if (!success) {
             if (this.fatal != null && this.fatal.toString().equals("true")) {
                 build.setResult(Result.FAILURE);
@@ -256,13 +258,15 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
         private String filePath;
         private String payload;
         private String postUrl;
+        private String userAccessKey;
         private TaskListener listener;
 
-        public FileUploader(String filePath, String payload, TaskListener listener, String postUrl) {
+        public FileUploader(String filePath, String payload, TaskListener listener, String postUrl, String userAccessKey) {
             this.filePath = filePath;
             this.payload = payload;
             this.listener = listener;
             this.postUrl = postUrl;
+            this.userAccessKey = userAccessKey;
         }
 
         @Override public Boolean invoke(File f, VirtualChannel channel) throws IOException, InterruptedException {
@@ -283,7 +287,7 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
 
             boolean success = false;
             try {
-                success = CloudPublisher.uploadQualityData(entity, postUrl);
+                success = CloudPublisher.uploadQualityData(entity, postUrl, userAccessKey);
             } catch (Exception ex) {
                 listener.error("Error uploading metric file: " + ex.getClass() + " - " + ex.getMessage());
                 listener.error("Stack trace:");

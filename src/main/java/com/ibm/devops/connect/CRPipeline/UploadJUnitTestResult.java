@@ -38,6 +38,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.entity.ContentType;
 
 import com.ibm.devops.connect.CloudPublisher;
+import com.ibm.devops.connect.DevOpsGlobalConfiguration;
 
 public class UploadJUnitTestResult extends Builder implements SimpleBuildStep {
 
@@ -57,8 +58,10 @@ public class UploadJUnitTestResult extends Builder implements SimpleBuildStep {
             throws AbortException, InterruptedException, IOException {
 
         Object fatalFailure = this.properties.get("fatal");
+        String buildUrl = Jenkins.getInstance().getRootUrl() + build.getUrl();
+        String userAccessKey = Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getApiToken();
 
-        boolean success = workspace.act(new FileUploader(this.properties, listener, Jenkins.getInstance().getRootUrl() + build.getUrl(), CloudPublisher.getQualityDataUrl()));
+        boolean success = workspace.act(new FileUploader(this.properties, listener, buildUrl, CloudPublisher.getQualityDataUrl(), userAccessKey));
         if (!success) {
             if (fatalFailure != null && fatalFailure.toString().equals("true")) {
                 build.setResult(Result.FAILURE);
@@ -103,12 +106,14 @@ public class UploadJUnitTestResult extends Builder implements SimpleBuildStep {
         private TaskListener listener;
         private String buildUrl;
         private String postUrl;
+        private String userAccessKey;
 
-        public FileUploader(Map<String, String> properties, TaskListener listener, String buildUrl, String postUrl) {
+        public FileUploader(Map<String, String> properties, TaskListener listener, String buildUrl, String postUrl, String userAccessKey) {
             this.properties = properties;
             this.listener = listener;
             this.buildUrl = buildUrl;
             this.postUrl = postUrl;
+            this.userAccessKey = userAccessKey;
         }
 
         @Override public Boolean invoke(File f, VirtualChannel channel) {
@@ -169,7 +174,7 @@ public class UploadJUnitTestResult extends Builder implements SimpleBuildStep {
 
             boolean success = false;
             try {
-                success = CloudPublisher.uploadQualityData(entity, postUrl);
+                success = CloudPublisher.uploadQualityData(entity, postUrl, userAccessKey);
             } catch (Exception ex) {
                 listener.error("Error uploading quality data: " + ex.getClass() + " - " + ex.getMessage());
             }

@@ -287,7 +287,7 @@ public class CloudPublisher  {
         return resStr;
     }
 
-    public static boolean uploadQualityData(HttpEntity entity, String url) throws Exception {
+    public static boolean uploadQualityData(HttpEntity entity, String url, String userAccessKey) throws Exception {
         CloudPublisher.ensureHttpClientInitialized();
         String localLogPrefix= logPrefix + "uploadQualityData ";
         String resStr = "";
@@ -295,7 +295,7 @@ public class CloudPublisher  {
 
         try {
             HttpPost postMethod = new HttpPost(url);
-            postMethod.setHeader("Authorization", "UserAccessKey " + Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getApiToken());
+            postMethod.setHeader("Authorization", "UserAccessKey " + userAccessKey);
             postMethod.setEntity(entity);
 
             response = httpClient.execute(postMethod);
