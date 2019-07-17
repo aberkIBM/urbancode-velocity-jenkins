@@ -40,7 +40,7 @@
         <f:entry title="Initiator" field="initiator">
             <f:textbox />
         </f:entry>
-        <f:entry title="Succeeded" field="succeeded">
+        <f:entry title="Result" field="result">
             <f:textbox />
         </f:entry>
         <f:entry title="Start Time" field="startTime">

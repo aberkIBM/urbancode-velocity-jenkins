@@ -31,7 +31,7 @@
         <f:entry title="Requestor" field="requestor">
             <f:textbox />
         </f:entry>
-        <f:entry title="Succeeded" field="succeeded">
+        <f:entry title="Status" field="status">
             <f:textbox />
         </f:entry>
         <f:entry title="Start Time" field="startTime">

@@ -41,7 +41,7 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
     private String versionName;
     private String revision;
     private String requestor;
-    private String succeeded;
+    private String status;
     private String startTime;
     private String endTime;
     private String appName;
@@ -57,7 +57,7 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
         String versionName,
         String revision,
         String requestor,
-        String succeeded,
+        String status,
         String startTime,
         String endTime,
         String appName,
@@ -71,7 +71,7 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
         this.versionName = versionName;
         this.revision = revision;
         this.requestor = requestor;
-        this.succeeded = succeeded;
+        this.status = status;
         this.startTime = startTime;
         this.endTime = endTime;
         this.appName = appName;
@@ -86,7 +86,7 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
     public String getTenantId() { return this.tenantId; }
     public String getRevision() { return this.revision; }
     public String getRequestor() { return this.requestor; }
-    public String getSucceeded() { return this.succeeded; }
+    public String getStatus() { return this.status; }
     public String getStartTime() { return this.startTime; }
     public String getEndTime() { return this.endTime; }
     public String getAppName() { return this.appName; }
@@ -106,7 +106,7 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
         String tenantId = envVars.expand(this.tenantId);
         String revision = envVars.expand(this.revision);
         String requestor = envVars.expand(this.requestor);
-        String succeeded = envVars.expand(this.succeeded);
+        String status = envVars.expand(this.status);
         String startTime = envVars.expand(this.startTime);
         String endTime = envVars.expand(this.endTime);
         String appName = envVars.expand(this.appName);
@@ -152,8 +152,8 @@ public class UploadBuild extends Builder implements SimpleBuildStep {
                 }
             }
         }
-        if (succeeded != null && !succeeded.equals("")) {
-          payload.put("status", succeeded.equals("true") ? "success" : "failure");
+        if (status != null && !status.equals("")) {
+          payload.put("status", status);
         } else {
             String computedStatus = "failure";
             Result buildResult = build.getResult();

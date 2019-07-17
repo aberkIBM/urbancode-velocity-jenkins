@@ -37,7 +37,7 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
     private String id;
     private String tenantId;
     private String name;
-    private String succeeded;
+    private String result;
     private String initiator;
     private String versionName;
     private String versionExtId;
@@ -57,7 +57,7 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
         String id,
         String tenantId,
         String name,
-        String succeeded,
+        String result,
         String initiator,
         String versionName,
         String versionExtId,
@@ -75,7 +75,7 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
         this.id = id;
         this.tenantId = tenantId;
         this.name = name;
-        this.succeeded = succeeded;
+        this.result = result;
         this.initiator = initiator;
         this.versionName = versionName;
         this.versionExtId = versionExtId;
@@ -94,7 +94,7 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
     public String getId() { return this.id; }
     public String getTenantId() { return this.tenantId; }
     public String getName() { return this.name; }
-    public String getSucceeded() { return this.succeeded; }
+    public String getResult() { return this.result; }
     public String getInitiator() { return this.initiator; }
     public String getVersionName() { return this.versionName; }
     public String getVersionExtId() { return this.versionExtId; }
@@ -128,7 +128,7 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
         String appExtId = envVars.expand(this.appExtId);
         String name = envVars.expand(this.name);
         String initiator = envVars.expand(this.initiator);
-        String succeeded = envVars.expand(this.succeeded);
+        String result = envVars.expand(this.result);
         String startTime = envVars.expand(this.startTime);
         String endTime = envVars.expand(this.endTime);
 
@@ -192,10 +192,10 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
                 }
             }
         }
-        if (succeeded != null && !succeeded.equals("")) {
-            payload.put("result", succeeded.equals("true") ? "success" : "failed");
+        if (result != null && !result.equals("")) {
+            payload.put("result", result);
         } else {
-            String computedStatus = "Failed";
+            String computedStatus = "failure";
             Result buildResult = build.getResult();
             if (buildResult == null || buildResult.equals(Result.SUCCESS)) {
                 computedStatus = "success";
