@@ -21,7 +21,6 @@ import org.slf4j.LoggerFactory;
 
 import com.ibm.devops.connect.DevOpsGlobalConfiguration;
 
-import com.ibm.cloud.urbancode.connect.client.ConnectSocket;
 import com.ibm.cloud.urbancode.connect.client.Listeners;
 import com.ibm.devops.connect.OnConnectListener;
 
@@ -46,9 +45,8 @@ public class CloudSocketComponent {
 
     final private IWorkListener workListener;
     final private String cloudUrl;
-    private ConnectSocket socket;
 
-    private Connection conn;
+    private static Connection conn;
 
     private static boolean otherIntegrationExists = false;
 
@@ -75,50 +73,68 @@ public class CloudSocketComponent {
 
     public void connectToCloudServices() throws Exception {
     	logPrefix= logPrefix + "connectToCloudServices ";
+
+        connectToAMQP();
+
+        log.info(logPrefix + "Assembling list of Jenkins Jobs...");
+
+        BuildJobsList buildJobList = new BuildJobsList();
+        buildJobList.runAsJenkinsUser(null);
+    }
+
+    public static boolean isAMQPConnected() {
+        if(conn == null) {
+            return false;
+        }
+
+        return conn.isOpen();
+    }
+
+    public void connectToAMQP() throws Exception {
         String syncId = getSyncId();
 
-        boolean shouldConnect = true;
+        ConnectionFactory factory = new ConnectionFactory();
+        EndpointManager em = new EndpointManager();
 
-        if(shouldConnect) {
-            ConnectionFactory factory = new ConnectionFactory();
-            EndpointManager em = new EndpointManager();
+        // Public Jenkins Client Credentials
+        factory.setUsername("jenkins");
+        factory.setPassword("jenkins");
 
-            // Public Jenkins Client Credentials
-            factory.setUsername("jenkins");
-            factory.setPassword("jenkins");
-
-            String host = em.getVelocityHostname();
-            String rabbitHost = Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getRabbitMQHost();
-            if (rabbitHost != null && !rabbitHost.equals("")) {
-                try {
-                    if (rabbitHost.endsWith("/")) {
-                        rabbitHost = rabbitHost.substring(0, rabbitHost.length() - 1);
-                    }
-                    URL urlObj = new URL(rabbitHost);
-                    host = urlObj.getHost();
-                } catch (MalformedURLException e) {
-                    log.warn("Provided Rabbit MQ Host is not a valid hostname. Using default : " + host, e);
+        String host = em.getVelocityHostname();
+        String rabbitHost = Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getRabbitMQHost();
+        if (rabbitHost != null && !rabbitHost.equals("")) {
+            try {
+                if (rabbitHost.endsWith("/")) {
+                    rabbitHost = rabbitHost.substring(0, rabbitHost.length() - 1);
                 }
+                URL urlObj = new URL(rabbitHost);
+                host = urlObj.getHost();
+            } catch (MalformedURLException e) {
+                log.warn("Provided Rabbit MQ Host is not a valid hostname. Using default : " + host, e);
             }
-            factory.setHost(host);
+        }
+        factory.setHost(host);
 
-            int port = 5672;
-            String rabbitPort = Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getRabbitMQPort();
+        int port = 5672;
+        String rabbitPort = Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getRabbitMQPort();
 
-            if (rabbitPort != null && !rabbitPort.equals("")) {
-                try {
-                    port = Integer.parseInt(rabbitPort);
-                } catch (NumberFormatException nfe) {
-                    log.warn("Provided Rabbit MQ port is not an integer.  Using default 5672");
-                }
+        if (rabbitPort != null && !rabbitPort.equals("")) {
+            try {
+                port = Integer.parseInt(rabbitPort);
+            } catch (NumberFormatException nfe) {
+                log.warn("Provided Rabbit MQ port is not an integer.  Using default 5672");
             }
-            factory.setPort(port);
+        }
+        factory.setPort(port);
+
+        // Synchronized to protect manipulation of static variable
+        synchronized (this) {
 
             if(this.conn != null && this.conn.isOpen()) {
                 this.conn.abort();
             }
 
-            this.conn = factory.newConnection();
+            conn = factory.newConnection();
 
             Channel channel = conn.createChannel();
 
@@ -149,12 +165,8 @@ public class CloudSocketComponent {
             };
 
             channel.basicConsume(queueName, true, consumer);
-
-            log.info(logPrefix + "\n\n\tAbout to attempt building list...\n\n");
-
-            BuildJobsList buildJobList = new BuildJobsList();
-            buildJobList.runAsJenkinsUser(null);
         }
+        
     }
 
     private String removeTrailingSlash(String url) {
@@ -162,29 +174,6 @@ public class CloudSocketComponent {
             url = url.substring(0, url.length() - 1);
         }
         return url;
-    }
-
-    // this does get called, but you may not see logging in the console. it will appear in the file.
-    public void disconnect() {
-        if (socket != null) {
-            try {
-                socket.disconnect();
-                log.info(logPrefix + "Disconnected from the cloud service");
-            }
-            catch (Exception e) {
-                log.error(logPrefix + "Error disconnecting the cloud service gracefully", e);
-            }
-            finally {
-                socket = null;
-            }
-        }
-    }
-
-    public boolean connected() {
-        if(socket == null) {
-            return false;
-        }
-        return socket.connected();
     }
 
     public String getCauseOfFailure() {

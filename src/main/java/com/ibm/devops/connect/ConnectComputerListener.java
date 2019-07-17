@@ -17,12 +17,15 @@ import org.slf4j.LoggerFactory;
 
 import com.ibm.devops.connect.Endpoints.EndpointManager;
 
+import com.ibm.devops.connect.ReconnectExecutor;
+
 @Extension
 public class ConnectComputerListener extends ComputerListener {
 	public static final Logger log = LoggerFactory.getLogger(ConnectComputerListener.class);
     private String logPrefix= "[UrbanCode Velocity] ConnectComputerListener#";
 
     private static CloudSocketComponent cloudSocketInstance;
+    private static ReconnectExecutor reconnectExecutor;
 
     private static void setCloudSocketComponent( CloudSocketComponent comp ) {
         cloudSocketInstance = comp;
@@ -36,10 +39,6 @@ public class ConnectComputerListener extends ComputerListener {
 
             CloudWorkListener listener = new CloudWorkListener();
 
-            if(cloudSocketInstance != null && cloudSocketInstance.connected()) {
-                cloudSocketInstance.disconnect();
-            }
-
             ConnectComputerListener.setCloudSocketComponent(new CloudSocketComponent(listener, url));
 
             try {
@@ -47,6 +46,14 @@ public class ConnectComputerListener extends ComputerListener {
                 getCloudSocketInstance().connectToCloudServices();
             } catch (Exception e) {
                 log.error(logPrefix + "Exception caught while connecting to Cloud Services: " + e);
+            }
+
+            // Synchronized to protect lazy initalization of static variable
+            synchronized(this) {
+                if(reconnectExecutor == null) {
+                    reconnectExecutor = new ReconnectExecutor(cloudSocketInstance);
+                    reconnectExecutor.startReconnectExecutor();
+                }
             }
         }
     }

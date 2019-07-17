@@ -36,6 +36,7 @@ import hudson.security.ACL;
 import jenkins.model.Jenkins;
 
 import com.ibm.devops.connect.CloudPublisher;
+import com.ibm.devops.connect.CloudSocketComponent;
 /**
  * Created by lix on 7/20/17.
  */
@@ -49,6 +50,7 @@ public class DevOpsGlobalConfiguration extends GlobalConfiguration {
     private String credentialsId;
     private String rabbitMQPort;
     private String rabbitMQHost;
+    private String apiToken;
 
     public DevOpsGlobalConfiguration() {
         load();
@@ -69,6 +71,15 @@ public class DevOpsGlobalConfiguration extends GlobalConfiguration {
 
     public void setSyncToken(String syncToken) {
         this.syncToken = syncToken;
+        save();
+    }
+
+    public String getApiToken() {
+        return apiToken;
+    }
+
+    public void setApiToken(String apiToken) {
+        this.apiToken = apiToken;
         save();
     }
 
@@ -118,6 +129,7 @@ public class DevOpsGlobalConfiguration extends GlobalConfiguration {
         credentialsId = formData.getString("credentialsId");
         rabbitMQPort = formData.getString("rabbitMQPort");
         rabbitMQHost = formData.getString("rabbitMQHost");
+        apiToken = formData.getString("apiToken");
         save();
 
         reconnectCloudSocket();
@@ -138,7 +150,14 @@ public class DevOpsGlobalConfiguration extends GlobalConfiguration {
         try {
             boolean connected = CloudPublisher.testConnection(syncId, syncToken, baseUrl);
             if (connected) {
-                return FormValidation.ok("Successful Connection to Velocity Services");
+                boolean amqpConnected = CloudSocketComponent.isAMQPConnected();
+
+                String rabbitMessage = "Not connected to RabbitMQ. Unable to run Jenkins jobs from UCV.";
+                if(amqpConnected) {
+                    rabbitMessage = "Connected to RabbitMQ successfully. Ready to run Jenkins jobs from UCV.";
+                }
+
+                return FormValidation.ok("Successful connection to Velocity Services.\n" + rabbitMessage);
             } else {
                 return FormValidation.error("Could not connect to Velocity.  Please check your URL and credentials provided.");
             }

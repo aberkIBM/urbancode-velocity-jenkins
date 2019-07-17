@@ -1,0 +1,12 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+    <f:entry title="Pipeline ID" field="pipelineId">
+        <f:textbox />
+    </f:entry>
+    <f:entry title="Stage Name" field="stageName">
+        <f:textbox />
+    </f:entry>
+    <f:entry title="Version ID" field="versionId">
+        <f:textbox />
+    </f:entry>
+</j:jelly>

@@ -28,6 +28,7 @@ import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.concurrent.FutureCallback;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
@@ -47,6 +48,7 @@ import org.apache.http.ssl.TrustStrategy;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.security.cert.X509Certificate;
 import java.security.NoSuchAlgorithmException;
 import java.security.KeyManagementException;
@@ -64,6 +66,8 @@ public class CloudPublisher  {
     private final static String JENKINS_JOB_ENDPOINT_URL = "api/v1/jenkins/jobs";
     private final static String JENKINS_JOB_STATUS_ENDPOINT_URL = "api/v1/jenkins/jobStatus";
     private final static String JENKINS_TEST_CONNECTION_URL = "api/v1/jenkins/testConnection";
+    private final static String BUILD_UPLOAD_URL = "api/v1/builds";
+    private final static String DEPLOYMENT_UPLOAD_URL = "api/v1/deployments";
 
     private static CloseableHttpClient httpClient;
     private static CloseableHttpAsyncClient asyncHttpClient;
@@ -133,9 +137,29 @@ public class CloudPublisher  {
         return em.getSyncApiEndpoint(baseUrl);
     }
 
-    private static String getQualityDataUrl() {
+    public static String getQualityDataUrl() {
         EndpointManager em = new EndpointManager();
         return em.getQualityDataEndpoint();
+    }
+
+    private static String getQualityDataRawUrl() {
+        EndpointManager em = new EndpointManager();
+        return em.getQualityDataRawEndpoint();
+    }
+
+    private static String getBuildUploadUrl() {
+        EndpointManager em = new EndpointManager();
+        return em.getReleaseEvensApiEndpoint() + BUILD_UPLOAD_URL;
+    }
+
+    private static String getDeploymentUploadUrl() {
+        EndpointManager em = new EndpointManager();
+        return em.getReleaseEvensApiEndpoint() + DEPLOYMENT_UPLOAD_URL;
+    }
+
+    private static String getDotsUrl() {
+        EndpointManager em = new EndpointManager();
+        return em.getDotsEndpoint();
     }
 
     /**
@@ -159,21 +183,124 @@ public class CloudPublisher  {
         CloudPublisher.postToSyncAPI(url, jobStatus.toString());
     }
 
-    public static boolean uploadQualityData(HttpEntity entity) throws Exception {
+    public static String uploadBuild(String payload) throws Exception {
         CloudPublisher.ensureHttpClientInitialized();
-        String localLogPrefix= logPrefix + "uploadQualityData ";
+        String localLogPrefix= logPrefix + "uploadBuild ";
         String resStr = "";
-        String url = CloudPublisher.getQualityDataUrl();
+        String url = CloudPublisher.getBuildUploadUrl();
         CloseableHttpResponse response = null;
 
         try {
             HttpPost postMethod = new HttpPost(url);
             attachHeaders(postMethod);
+            postMethod.setHeader("Content-Type", "application/json");
+            postMethod.setHeader("Authorization", "UserAccessKey " + Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getApiToken());
+            postMethod.setEntity(new StringEntity(payload));
+
+            response = httpClient.execute(postMethod);
+            resStr = EntityUtils.toString(response.getEntity());
+            if (response.getStatusLine().toString().contains("200")) {
+                log.info(localLogPrefix + "Uploaded Build successfully");
+            } else {
+                throw new Exception("Bad response code when uploading Build: " + response.getStatusLine() + " - " + resStr);
+            }
+        } finally {
+            if (response != null) {
+                try {
+                    response.close();
+                } catch (Exception e) {
+                    log.error("Could not close uploadBuild response");
+                }
+            }
+        }
+        return resStr;
+    }
+
+    public static String uploadDeployment(String payload) throws Exception {
+        CloudPublisher.ensureHttpClientInitialized();
+        String localLogPrefix= logPrefix + "uploadDeployment ";
+        String resStr = "";
+        String url = CloudPublisher.getDeploymentUploadUrl();
+        CloseableHttpResponse response = null;
+
+        try {
+            HttpPost postMethod = new HttpPost(url);
+            attachHeaders(postMethod);
+            postMethod.setHeader("Content-Type", "application/json");
+            postMethod.setHeader("Authorization", "UserAccessKey " + Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getApiToken());
+            postMethod.setEntity(new StringEntity(payload));
+
+            response = httpClient.execute(postMethod);
+            resStr = EntityUtils.toString(response.getEntity());
+            if (response.getStatusLine().toString().contains("200")) {
+                log.info(localLogPrefix + "Uploaded Deployment successfully");
+            } else {
+                throw new Exception("Bad response code when uploading Deployment: " + response.getStatusLine() + " - " + resStr);
+            }
+        } finally {
+            if (response != null) {
+                try {
+                    response.close();
+                } catch (Exception e) {
+                    log.error("Could not close uploadDeployment response");
+                }
+            }
+        }
+        return resStr;
+    }
+
+    public static String checkGate(String pipelineId, String stageName, String versionId) throws Exception {
+        CloudPublisher.ensureHttpClientInitialized();
+        String localLogPrefix= logPrefix + "checkGate ";
+        String resStr = "";
+        String url = CloudPublisher.getDotsUrl();
+        CloseableHttpResponse response = null;
+
+        try {
+            URIBuilder builder = new URIBuilder(url);
+            builder.setParameter("pipelineId", pipelineId);
+            builder.setParameter("stageName", stageName);
+            builder.setParameter("versionId", versionId);
+            URI uri = builder.build();
+            System.out.println("TEST gates url: " + uri.toString());
+            HttpGet getMethod = new HttpGet(uri);
+            attachHeaders(getMethod);
+            getMethod.setHeader("Accept", "application/json");
+            getMethod.setHeader("Authorization", "UserAccessKey " + Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getApiToken());
+
+            response = httpClient.execute(getMethod);
+            resStr = EntityUtils.toString(response.getEntity());
+            if (response.getStatusLine().toString().contains("200")) {
+                log.info(localLogPrefix + "Gates Checked Successfully");
+            } else {
+                throw new Exception("Bad response code when uploading Deployment: " + response.getStatusLine() + " - " + resStr);
+            }
+        } finally {
+            if (response != null) {
+                try {
+                    response.close();
+                } catch (Exception e) {
+                    log.error("Could not close uploadDeployment response");
+                }
+            }
+        }
+        return resStr;
+    }
+
+    public static boolean uploadQualityData(HttpEntity entity, String url, String userAccessKey) throws Exception {
+        CloudPublisher.ensureHttpClientInitialized();
+        String localLogPrefix= logPrefix + "uploadQualityData ";
+        String resStr = "";
+        CloseableHttpResponse response = null;
+
+        try {
+            HttpPost postMethod = new HttpPost(url);
+            postMethod.setHeader("Authorization", "UserAccessKey " + userAccessKey);
             postMethod.setEntity(entity);
 
             response = httpClient.execute(postMethod);
             resStr = EntityUtils.toString(response.getEntity());
-            if (response.getStatusLine().toString().contains("201")) {
+            if (response.getStatusLine().toString().contains("200")) {
                 log.info(localLogPrefix + "Upload Quality Data successfully");
                 return true;
             } else {
@@ -185,6 +312,38 @@ public class CloudPublisher  {
                     response.close();
                 } catch (Exception e) {
                     log.error("Could not close uploadQualityData response");
+                }
+            }
+        }
+    }
+
+    public static void uploadQualityDataRaw(String payload) throws Exception {
+        CloudPublisher.ensureHttpClientInitialized();
+        String localLogPrefix= logPrefix + "uploadMetricDataRaw ";
+        String resStr = "";
+        String url = CloudPublisher.getQualityDataRawUrl();
+        CloseableHttpResponse response = null;
+
+        try {
+            HttpPost postMethod = new HttpPost(url);
+            attachHeaders(postMethod);
+            postMethod.setHeader("Content-Type", "application/json");
+            postMethod.setHeader("Authorization", "UserAccessKey " + Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getApiToken());
+            postMethod.setEntity(new StringEntity(payload));
+
+            response = httpClient.execute(postMethod);
+            resStr = EntityUtils.toString(response.getEntity());
+            if (response.getStatusLine().toString().contains("200")) {
+                log.info(localLogPrefix + "Uploaded Metric (raw) successfully");
+            } else {
+                throw new Exception("Bad response code when uploading Metric (raw): " + response.getStatusLine() + " - " + resStr);
+            }
+        } finally {
+            if (response != null) {
+                try {
+                    response.close();
+                } catch (Exception e) {
+                    log.error("Could not close uploadQualityDataRaw response");
                 }
             }
         }
@@ -273,7 +432,7 @@ public class CloudPublisher  {
 
             if (response.getStatusLine().toString().contains("200")) {
                 // get 200 response
-                log.info("Connected to Velocity service successfully");
+                log.info("Connected to Velocity service successfully.");
                 return true;
             } else {
                 log.info("Could not authenticate to Velocity Services");

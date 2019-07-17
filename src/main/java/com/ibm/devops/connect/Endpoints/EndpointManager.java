@@ -16,12 +16,28 @@ public class EndpointManager {
         return endpointProvider.getSyncApiEndpoint();
     }
 
+    public String getPipelinesEndpoint() {
+        return endpointProvider.getPipelinesEndpoint();
+    }
+
     public String getQualityDataEndpoint() {
         return endpointProvider.getQualityDataEndpoint();
     }
 
+    public String getQualityDataRawEndpoint() {
+        return endpointProvider.getQualityDataRawEndpoint();
+    }
+
     public String getSyncApiEndpoint(String baseUrl) {
         return endpointProvider.getSyncApiEndpoint(baseUrl);
+    }
+
+    public String getReleaseEvensApiEndpoint() {
+        return endpointProvider.getReleaseEvensApiEndpoint();
+    }
+
+    public String getDotsEndpoint() {
+        return endpointProvider.getDotsEndpoint();
     }
 
     public String getSyncStoreEndpoint() {
