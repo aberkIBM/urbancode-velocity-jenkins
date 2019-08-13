@@ -213,7 +213,7 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
 
         boolean success = workspace.act(new FileUploader(filePath, payload.toString(), listener, CloudPublisher.getQualityDataUrl(), userAccessKey));
         if (!success) {
-            listener.getLogger().println("Problem uploading metric file to UrbanCode Velocity.");
+            listener.getLogger().println("Problem uploading metrics file to UrbanCode Velocity.");
             if (this.fatal != null && this.fatal.toString().equals("true")) {
                 if (this.debug != null && this.debug.toString().equals("true")) {
                     listener.getLogger().println("Failing build due to fatal=true.");
