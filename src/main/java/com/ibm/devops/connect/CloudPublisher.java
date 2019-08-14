@@ -305,8 +305,8 @@ public class CloudPublisher  {
             if (response.getStatusLine().toString().contains("200")) {
                 log.info(localLogPrefix + "Upload Quality Data successfully");
                 success = true;
-                return success;
             }
+            return success;
         } finally {
             StatusLine status = null;
             if (response != null) {
