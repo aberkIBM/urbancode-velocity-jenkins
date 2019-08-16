@@ -43,6 +43,7 @@ import org.apache.http.conn.ssl.SSLContextBuilder;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
+import org.apache.http.StatusLine;
 import org.apache.http.ssl.SSLContexts;
 import org.apache.http.ssl.TrustStrategy;
 
@@ -292,6 +293,7 @@ public class CloudPublisher  {
         String localLogPrefix= logPrefix + "uploadQualityData ";
         String resStr = "";
         CloseableHttpResponse response = null;
+        boolean success = false;
 
         try {
             HttpPost postMethod = new HttpPost(url);
@@ -302,17 +304,21 @@ public class CloudPublisher  {
             resStr = EntityUtils.toString(response.getEntity());
             if (response.getStatusLine().toString().contains("200")) {
                 log.info(localLogPrefix + "Upload Quality Data successfully");
-                return true;
-            } else {
-                throw new Exception("Bad response code when uploading Quality Data: " + response.getStatusLine() + " - " + resStr);
+                success = true;
             }
+            return success;
         } finally {
+            StatusLine status = null;
             if (response != null) {
+                status = response.getStatusLine();
                 try {
                     response.close();
                 } catch (Exception e) {
                     log.error("Could not close uploadQualityData response");
                 }
+            }
+            if (!success) {
+                throw new Exception("Bad response code when uploading Quality Data: " + status + " - " + resStr);
             }
         }
     }
