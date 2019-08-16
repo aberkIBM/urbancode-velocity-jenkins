@@ -225,7 +225,7 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
                 }
             } else {
                 if (this.debug != null && this.debug.toString().equals("true")) {
-                    listener.getLogger().println("Marking build as unstable due to fatal not set.");
+                    listener.getLogger().println("Marking build as unstable due to fatal flag not set.");
                 }
                 build.setResult(Result.UNSTABLE);
             }
