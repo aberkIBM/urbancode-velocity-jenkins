@@ -73,7 +73,7 @@ public class CloudPublisher  {
     private static CloseableHttpClient httpClient;
     private static CloseableHttpAsyncClient asyncHttpClient;
     private static Boolean acceptAllCerts = true;
-    private static int requestTimeoutSeconds = 30;
+    private static int requestTimeoutSeconds = 90;
 
     public static void ensureHttpClientInitialized() {
         if (httpClient == null) {
