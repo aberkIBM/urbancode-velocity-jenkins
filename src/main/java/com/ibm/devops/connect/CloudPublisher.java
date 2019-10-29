@@ -444,13 +444,17 @@ public class CloudPublisher  {
                 log.info("Could not authenticate to Velocity Services");
             }
         } catch (IllegalStateException e) {
-            log.error("Could not connect to Velocity services");
+            log.error("Could not connect to Velocity:");
+            log.error(e.getMessage());
         } catch (UnsupportedEncodingException e) {
-            log.error("Could not connect to Velocity services");
+            log.error("Could not connect to Velocity:");
+            log.error(e.getMessage());
         } catch (ClientProtocolException e) {
-            log.error("Could not connect to Velocity services");
+            log.error("Could not connect to Velocity:");
+            log.error(e.getMessage());
         } catch (IOException e) {
-            log.error("Could not connect to Velocity services");
+            log.error("Could not connect to Velocity:");
+            log.error(e.getMessage());
         } finally {
             if (response != null) {
                 try {
