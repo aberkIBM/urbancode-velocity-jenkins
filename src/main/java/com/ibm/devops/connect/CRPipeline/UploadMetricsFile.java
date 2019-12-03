@@ -144,6 +144,8 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
         String metricsRecordUrl = envVars.expand(this.metricsRecordUrl);
         String description = envVars.expand(this.description);
         String combineTestSuites = envVars.expand(this.combineTestSuites == null ? "" : this.combineTestSuites.toString());
+        String fatal = envVars.expand(this.fatal == null ? "" : this.fatal.toString());
+        String debug = envVars.expand(this.debug == null ? "" : this.debug.toString());
         String buildId = envVars.expand(this.buildId);
         String buildUrl = envVars.expand(this.buildUrl);
 
@@ -202,7 +204,7 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
         }
         payload.put("build", buildObj);
 
-        if (this.debug != null && this.debug.toString().equals("true")) {
+        if (debug.equals("true")) {
             listener.getLogger().println("payload: " + payload.toString());
         }
         System.out.println("TEST payload: " + payload.toString(2));
@@ -214,17 +216,17 @@ public class UploadMetricsFile extends Builder implements SimpleBuildStep {
         boolean success = workspace.act(new FileUploader(filePath, payload.toString(), listener, CloudPublisher.getQualityDataUrl(), userAccessKey));
         if (!success) {
             listener.getLogger().println("Problem uploading metrics file to UrbanCode Velocity.");
-            if (this.fatal != null && this.fatal.toString().equals("true")) {
-                if (this.debug != null && this.debug.toString().equals("true")) {
+            if (fatal.equals("true")) {
+                if (debug.equals("true")) {
                     listener.getLogger().println("Failing build due to fatal=true.");
                 }
                 build.setResult(Result.FAILURE);
-            } else if (this.fatal != null && this.fatal.toString().equals("false")) {
-                if (this.debug != null && this.debug.toString().equals("true")) {
+            } else if (fatal.equals("false")) {
+                if (debug.equals("true")) {
                     listener.getLogger().println("Not changing build result due to fatal=false.");
                 }
             } else {
-                if (this.debug != null && this.debug.toString().equals("true")) {
+                if (debug.equals("true")) {
                     listener.getLogger().println("Marking build as unstable due to fatal flag not set.");
                 }
                 build.setResult(Result.UNSTABLE);

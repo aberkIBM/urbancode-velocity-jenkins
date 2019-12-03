@@ -49,5 +49,8 @@
         <f:entry title="End Time" field="endTime">
             <f:textbox />
         </f:entry>
+        <f:entry title="Fatal" field="fatal">
+            <f:checkbox />
+        </f:entry>
     </f:advanced>
 </j:jelly>

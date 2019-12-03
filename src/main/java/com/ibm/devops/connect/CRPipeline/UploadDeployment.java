@@ -51,6 +51,7 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
     private String appId;
     private String appExtId;
     private Boolean debug;
+    private Boolean fatal;
 
     @DataBoundConstructor
     public UploadDeployment(
@@ -70,7 +71,8 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
         String appName,
         String appId,
         String appExtId,
-        Boolean debug
+        Boolean debug,
+        Boolean fatal
     ) {
         this.id = id;
         this.tenantId = tenantId;
@@ -89,6 +91,7 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
         this.appId = appId;
         this.appExtId = appExtId;
         this.debug = debug;
+        this.fatal = fatal;
     }
 
     public String getId() { return this.id; }
@@ -108,6 +111,7 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
     public String getAppId() { return this.appId; }
     public String getAppExtId() { return this.appExtId; }
     public Boolean getDebug() { return this.debug; }
+    public Boolean getFatal() { return this.fatal; }
 
     @Override
     public void perform(final Run<?, ?> build, FilePath workspace, Launcher launcher, final TaskListener listener)
@@ -131,6 +135,8 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
         String result = envVars.expand(this.result);
         String startTime = envVars.expand(this.startTime);
         String endTime = envVars.expand(this.endTime);
+        String debug = envVars.expand(this.debug == null ? "" : this.debug.toString());
+        String fatal = envVars.expand(this.fatal == null ? "" : this.fatal.toString());
 
         JSONObject payload = new JSONObject();
 
@@ -216,7 +222,7 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
 
         System.out.println("TEST payload: " + payload.toString(2));
 
-        if (this.debug != null && this.debug.toString().equals("true")) {
+        if (debug.equals("true")) {
             listener.getLogger().println("payload: " + payload.toString());
         }
 
@@ -231,7 +237,21 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
             listener.getLogger().println("Successfully uploaded deployment to UrbanCode Velocity.");
         } catch (Exception ex) {
             listener.error("Error uploading deployment data: " + ex.getClass() + " - " + ex.getMessage());
-            build.setResult(Result.FAILURE);
+            if (fatal.equals("true")) {
+                if (debug.equals("true")) {
+                    listener.getLogger().println("Failing build due to fatal=true.");
+                }
+                build.setResult(Result.FAILURE);
+            } else if (fatal.equals("false")) {
+                if (debug.equals("true")) {
+                    listener.getLogger().println("Not changing build result due to fatal=false.");
+                }
+            } else {
+                if (debug.equals("true")) {
+                    listener.getLogger().println("Marking build as unstable due to fatal flag not set.");
+                }
+                build.setResult(Result.UNSTABLE);
+            }
         }
     }
 
