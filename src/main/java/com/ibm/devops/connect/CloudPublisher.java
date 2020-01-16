@@ -441,7 +441,8 @@ public class CloudPublisher  {
                 log.info("Connected to Velocity service successfully.");
                 return true;
             } else {
-                log.info("Could not authenticate to Velocity Services");
+                log.warn("Could not authenticate to Velocity Services:");
+                log.warn(response.toString());
             }
         } catch (IllegalStateException e) {
             log.error("Could not connect to Velocity:");
