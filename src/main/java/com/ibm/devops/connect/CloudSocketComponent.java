@@ -28,6 +28,7 @@ import com.ibm.devops.connect.CloudPublisher;
 
 import io.socket.client.Socket;
 import com.ibm.devops.connect.SecuredActions.BuildJobsList;
+import com.ibm.devops.connect.SecuredActions.BuildJobsList.BuildJobListParamObj;
 
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.Connection;
@@ -79,7 +80,8 @@ public class CloudSocketComponent {
         log.info(logPrefix + "Assembling list of Jenkins Jobs...");
 
         BuildJobsList buildJobList = new BuildJobsList();
-        buildJobList.runAsJenkinsUser(null);
+        BuildJobListParamObj paramObj = buildJobList.new BuildJobListParamObj(null, "Building Job List", null);
+        buildJobList.runAsJenkinsUser(paramObj);
     }
 
     public static boolean isAMQPConnected() {
