@@ -38,6 +38,7 @@ public class CloudSocketComponent {
 
     private static Connection conn;
 
+    private static boolean queueIsAvailable = false;
     private static boolean otherIntegrationExists = false;
 
     private static void setOtherIntegrationsExists(boolean exists) {
@@ -76,10 +77,9 @@ public class CloudSocketComponent {
     }
 
     public static boolean isAMQPConnected() {
-        if (conn == null) {
+        if (conn == null || queueIsAvailable == false) {
             return false;
         }
-
         return conn.isOpen();
     }
 
@@ -91,6 +91,8 @@ public class CloudSocketComponent {
         String syncId = getSyncId();
 
         ConnectionFactory factory = new ConnectionFactory();
+        factory.setAutomaticRecoveryEnabled(false);
+
         EndpointManager em = new EndpointManager();
 
         // Public Jenkins Client Credentials
@@ -161,10 +163,25 @@ public class CloudSocketComponent {
                 }
             };
 
-            channel.basicConsume(queueName, true, consumer);
+            if (checkQueueAvailability(channel, queueName)) {
+                channel.basicConsume(queueName, true, consumer);
+            }else{
+                log.info("Queue is not yet available, will attempt to reconect shortly...");
+                queueIsAvailable = false;
+            }
         }
-        
     }
+
+    public static boolean checkQueueAvailability(Channel channel, String queueName) throws IOException {
+        try {
+          channel.queueDeclarePassive(queueName);
+          queueIsAvailable = true;
+          return true;
+        } catch (IOException e) {
+            log.error("Checking Queue availability threw exception: ", e);
+        }
+        return false;
+      }
 
     private String removeTrailingSlash(String url) {
         if (url.endsWith("/")) {

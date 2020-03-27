@@ -36,22 +36,15 @@ public class ReconnectExecutor {
     }
 
     private class ReconnectRunner implements Runnable {
-
         @Override
         public void run()
         {
-            try {
-                if (!cloudSocketInstance.isAMQPConnected() && Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).isConfigured()) {
-                    try {
-                        log.info("Reconnecting to AMQP");
-                        cloudSocketInstance.connectToAMQP();
-                    } catch (Exception e) {
-                        log.error("Unable to Reconnect to UCV AMQP", e);
-                    }
+           if (!cloudSocketInstance.isAMQPConnected() && Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).isConfigured()) {
+                try {
+                    cloudSocketInstance.connectToAMQP();
+                } catch (Exception e) {
+                    log.error("Unable to Reconnect to UCV AMQP", e);
                 }
-            }
-            finally {
-
             }
         }
     }
