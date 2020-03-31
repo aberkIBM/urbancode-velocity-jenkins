@@ -225,6 +225,8 @@ public class UploadDeployment extends Builder implements SimpleBuildStep {
             payload.put("end_time", System.currentTimeMillis());
         }
 
+        // build-derived inputs
+        payload.put("url", Jenkins.getInstance().getRootUrl() + build.getUrl());
 
         System.out.println("TEST payload: " + payload.toString(2));
 
