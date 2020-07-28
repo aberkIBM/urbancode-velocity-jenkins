@@ -58,6 +58,7 @@ public abstract class AbstractJenkinsStatus {
 
     protected Boolean isPipeline;
     protected Boolean isPaused;
+    protected Boolean isRunStatus;
 
     protected void getOrCreateCrAction() {
 
@@ -116,6 +117,7 @@ public abstract class AbstractJenkinsStatus {
             result.put("url", Jenkins.getInstance().getRootUrl() + run.getUrl());
             result.put("jobExternalId", getJobUniqueIdFromBuild());
             result.put("name", run.getDisplayName());
+            result.put("startTime", run.getStartTimeInMillis());
         } else {
             result.put("url", Jenkins.getInstance().getRootUrl());
             result.put("name", "Job Error");
@@ -253,6 +255,7 @@ public abstract class AbstractJenkinsStatus {
 
         result.put("status", status);
         result.put("timestamp", System.currentTimeMillis());
+        result.put("startTime", run.getStartTimeInMillis());
         result.put("syncId", Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getSyncId());
         result.put("name", run.getDisplayName());
         result.put("steps", cloudCause.getStepsArray());
@@ -260,6 +263,7 @@ public abstract class AbstractJenkinsStatus {
         result.put("returnProps", cloudCause.getReturnProps());
         result.put("isPipeline", isPipeline);
         result.put("isPaused", isPaused);
+        result.put("isRunStatus", isRunStatus);
         result.put("jobName", run.getParent().getName());
         result.put("jobExternalId", getJobUniqueIdFromBuild());
         result.put("sourceData", cloudCause.getSourceDataJson());
@@ -270,7 +274,11 @@ public abstract class AbstractJenkinsStatus {
         return result;
     }
 
-    abstract protected FilePath getWorkspaceFilePath();
+	public void setRunStatus(Boolean isRunStatus) {
+		this.isRunStatus = isRunStatus;
+	}
+
+	abstract protected FilePath getWorkspaceFilePath();
 
     abstract protected void evaluatePipelineStep();
 
