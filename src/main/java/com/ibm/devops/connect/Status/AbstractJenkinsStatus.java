@@ -38,6 +38,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import java.security.MessageDigest;
+import javax.crypto.spec.SecretKeySpec;
+import javax.crypto.Cipher;
+import net.sf.json.*;
+import com.mashape.unirest.http.HttpResponse;
+import com.mashape.unirest.http.Unirest;
+import com.mashape.unirest.http.exceptions.UnirestException;
+import com.cloudbees.plugins.credentials.common.StandardUsernamePasswordCredentials;
+import java.util.Base64;
+import java.nio.charset.StandardCharsets;
+import org.apache.http.client.utils.URIBuilder;
+
 public abstract class AbstractJenkinsStatus {
     public static final Logger log = LoggerFactory.getLogger(AbstractJenkinsStatus.class);
     // Run
@@ -270,7 +282,50 @@ public abstract class AbstractJenkinsStatus {
         result.put("draData", cloudCause.getDRADataJson());
         result.put("crProperties", crAction.getCrProperties());
         result.put("envProperties", crAction.getEnvProperties());
-
+        StandardUsernamePasswordCredentials credentials = Jenkins.getInstance().getDescriptorByType(DevOpsGlobalConfiguration.class).getCredentialsObj();          
+        String plainCredentials = credentials.getUsername() + ":" + credentials.getPassword().getPlainText();
+        String encodedString = getEncodedString(plainCredentials);
+        String authorizationHeader = "Basic " + encodedString;
+        String baseUrl = Jenkins.getInstance().getRootUrl() + run.getUrl();
+        String path = "api/json";
+        String finalUrl = null;
+        String apiResponse = null;
+        String requestor = null;
+        try {
+            URIBuilder builder = new URIBuilder(baseUrl);
+            builder.setPath(builder.getPath()+path); 
+            finalUrl = builder.toString();
+        } catch (Exception e) {
+            log.error("Caught error while building url to get requestor name: ", e);
+        }
+        try {
+            HttpResponse<String> response = Unirest.get(finalUrl)
+                .header("Authorization", authorizationHeader)
+                .asString();
+            apiResponse = response.getBody().toString();
+            JSONArray apiResponseArray = JSONArray.fromObject("[" + apiResponse + "]");
+            JSONObject apiResponseObject = apiResponseArray.getJSONObject(0);
+            if(apiResponseObject.has("actions")){
+                JSONArray actionsArray = JSONArray.fromObject(apiResponseObject.getString("actions"));
+                for(int i=0;i<actionsArray.size();i++){
+                    JSONObject actionsObject = actionsArray.getJSONObject(i);
+                    if(actionsObject.has("causes")){
+                        JSONArray causesArray = JSONArray.fromObject(actionsObject.getString("causes"));
+                        JSONObject causesObject = causesArray.getJSONObject(0);
+                        if(causesObject.has("userName")){
+                            requestor = causesObject.getString("userName");
+                            result.put("requestor", requestor);
+                        }else if(causesObject.has("shortDescription")){
+                            requestor = causesObject.getString("shortDescription");
+                            result.put("requestor", requestor);
+                        }
+                    }
+                }
+            }
+        } catch (UnirestException e) {
+            log.error("UnirestException: Failed to get details of requestor", e);
+        }
+        // log.info(result.toString());
         return result;
     }
 
@@ -284,4 +339,27 @@ public abstract class AbstractJenkinsStatus {
 
     abstract protected void evaluateBuildStep();
 
+    private static byte[] toByte(String hexString) {
+        int len = hexString.length()/2;
+        byte[] result = new byte[len];
+        for (int i = 0; i < len; i++) {
+            result[i] = Integer.valueOf(hexString.substring(2*i, 2*i+2), 16).byteValue();
+        }
+        return result;
+    }
+
+    private static String decrypt(String seed, String encrypted) throws Exception {
+        byte[] keyb = seed.getBytes("UTF-8");
+        MessageDigest md = MessageDigest.getInstance("MD5");
+        byte[] thedigest = md.digest(keyb);
+        SecretKeySpec skey = new SecretKeySpec(thedigest, "AES");
+        Cipher dcipher = Cipher.getInstance("AES");
+        dcipher.init(Cipher.DECRYPT_MODE, skey);
+        byte[] clearbyte = dcipher.doFinal(toByte(encrypted));
+        return new String(clearbyte, "UTF-8");
+    }
+
+    private static String getEncodedString(String credentials){  
+        return Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));   
+    }
 }
